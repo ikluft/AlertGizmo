@@ -367,7 +367,7 @@ AlertGizmo is available by downloading from the Github repository.
 
 =head2 Perl Development Environment
 
-The source code repository is in a subdirectory at L<https://github.com/ikluft/ikluft-tools/tree/master/space-alerts> .
+The source code repository is at L<https://github.com/ikluft/AlertGizmo> .
 
 For a development environment, make sure Perl is installed. Check first if binary packages are available for your OS & p
 latform. More information can be found at L<https://metacpan.org/dist/perl/view/INSTALL>.
@@ -410,8 +410,8 @@ TBD
 
 =head1 BUGS AND LIMITATIONS
 
-Please report bugs via GitHub at L<https://github.com/ikluft/ikluft-tools/issues>
+Please report bugs via GitHub at L<https://github.com/ikluft/AlertGizmo/issues>
 
-Patches and enhancements may be submitted via a pull request at L<https://github.com/ikluft/ikluft-tools/pulls>
+Patches and enhancements may be submitted via a pull request at L<https://github.com/ikluft/AlertGizmo/pulls>
 
 =cut
