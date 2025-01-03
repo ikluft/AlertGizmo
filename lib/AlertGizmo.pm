@@ -22,12 +22,25 @@ use Scalar::Util qw( blessed );
 use FindBin;
 use AlertGizmo::Config;
 use File::Basename;
+use File::Fetch;
 use Getopt::Long;
 use DateTime;
 use DateTime::Format::Flexible;
 use Template;
 use results;
 use Data::Dumper;
+
+# exceptions/errors
+use Exception::Class (
+    'AlertGizmo::Exception',
+
+    'AlertGizmo::Exception::NetworkGet' => {
+        isa         => 'AlertGizmo::Exception',
+        alias       => 'throw_network_get',
+        fields      => [ qw( client )],
+        description => "Failed to access feed source",
+    },
+);
 
 # initialize class static variables
 AlertGizmo::Config->accessor( ["options"], {} );
@@ -261,6 +274,30 @@ sub test_dump
     return;
 }
 
+# network access utility function provided for use by subclasses
+sub net_get
+{
+    my ( $self, $source ) = @_;
+
+    if ( not defined $source ) {
+        AlertGizmo::Exception::NetworkGet->throw( "net_get: URL parameter missing" );
+    }
+    AlertGizmo::Config->verbose() and say STDERR "net_get(" . $source . ")\n";
+
+    # send request, capture response
+    my $ff = File::Fetch->new(uri => $source );
+    my $content;
+    $ff->fetch( to => \$content );
+
+    # abort on failure
+    if ( $ff->error( false ) ) {
+        AlertGizmo::Exception::NetworkGet->throw( "The request received an error: " . $ff->error( true ) );
+    }
+
+    # return the content
+    return \$content;
+}
+
 # inner mainline called from main() exception-catching wrapper
 sub main_inner
 {
@@ -403,6 +440,17 @@ om CPAN with this command:
 TBD
 
 =head1 FUNCTIONS AND METHODS
+
+=over 4
+
+=item $obj->net_get ( $url )
+
+This WebFetch utility function will get a URL and return a reference
+to a scalar with the retrieved contents.
+
+In case of an error, it throws an exception.
+
+=back
 
 =head1 LICENSE
 
