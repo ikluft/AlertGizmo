@@ -277,15 +277,15 @@ sub test_dump
 # network access utility function provided for use by subclasses
 sub net_get
 {
-    my ( $self, $source ) = @_;
+    my ( $class, $source ) = @_;
 
     if ( not defined $source ) {
-        AlertGizmo::Exception::NetworkGet->throw( "net_get: URL parameter missing" );
+        AlertGizmo::Exception::NetworkGet->throw( "net_get: URI/URL source parameter missing" );
     }
     AlertGizmo::Config->verbose() and say STDERR "net_get(" . $source . ")\n";
 
     # send request, capture response
-    my $ff = File::Fetch->new(uri => $source );
+    my $ff = File::Fetch->new( uri => $source );
     my $content;
     $ff->fetch( to => \$content );
 
@@ -295,7 +295,7 @@ sub net_get
     }
 
     # return the content
-    return \$content;
+    return $content;
 }
 
 # inner mainline called from main() exception-catching wrapper
