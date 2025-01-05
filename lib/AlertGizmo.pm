@@ -275,6 +275,7 @@ sub test_dump
 }
 
 # network access utility function provided for use by subclasses
+# originally based on WebFetch's get() method, modified to use File::Fetch instead
 sub net_get
 {
     my ( $class, $source ) = @_;
