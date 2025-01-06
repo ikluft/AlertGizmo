@@ -278,24 +278,36 @@ sub test_dump
 # originally based on WebFetch's get() method, modified to use File::Fetch instead
 sub net_get
 {
-    my ( $class, $source ) = @_;
+    my ( $class, $source, $params ) = @_;
 
     if ( not defined $source ) {
         AlertGizmo::Exception::NetworkGet->throw( "net_get: URI/URL source parameter missing" );
     }
     AlertGizmo::Config->verbose() and say STDERR "net_get(" . $source . ")\n";
 
+    # unpack parameters if present
+    my $file_path;
+    if (( defined $params ) and ( ref $params eq "HASH" )) {
+        if ( exists $params->{file} ) {
+            $file_path = $params->{file};
+        }
+    }
+
     # send request, capture response
     my $ff = File::Fetch->new( uri => $source );
     my $content;
-    $ff->fetch( to => \$content );
+    my $dest = ( defined $file_path ) ? $file_path : \$content;
+    $ff->fetch( to => $dest );
 
     # abort on failure
     if ( $ff->error( false ) ) {
         AlertGizmo::Exception::NetworkGet->throw( "The request received an error: " . $ff->error( true ) );
     }
 
-    # return the content
+    # return the content unless a file path was specified
+    if ( defined $file_path ) {
+        return;
+    }
     return $content;
 }
 

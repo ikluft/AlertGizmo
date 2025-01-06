@@ -24,7 +24,6 @@ use Carp qw(croak confess);
 use File::Basename;
 use DateTime;
 use DateTime::Format::Flexible;
-use IPC::Run;
 use File::Slurp;
 use IO::Interactive qw(is_interactive);
 use JSON;
@@ -185,26 +184,13 @@ sub do_neo_query
         my $url = sprintf $NEO_API_URL, $class->params( ["start_date"] );
         my ( $outstr, $errstr );
         my $proxy = $class->config_proxy();
-        my @cmd   = (
-            "/usr/bin/curl", "--silent", ( ( defined $proxy ) ? ( "--proxy", $proxy ) : () ),
-            "--output", $class->paths( ["outjson"] ), $url
-        );
-        IPC::Run::run( \@cmd, '<', \undef, '>', \$outstr, '2>', \$errstr );
+        try {
+            $class->net_get( $url, { file => $class->paths( ["outjson"] ) } );
+        } catch ( $e ) {
+            confess "failed to get URL ($url): " . $e;
+        }
 
         # check results of query
-        if ( $? == -1 ) {
-            confess "failed to execute command (" . join( " ", @cmd ) . "): $!";
-        }
-        my $retcode = $? >> 8;
-        if ( $? & 127 ) {
-            confess sprintf "command ("
-                . join( " ", @cmd )
-                . " child died with signal %d, %s coredump\n",
-                ( $? & 127 ), ( $? & 128 ) ? 'with' : 'without';
-        }
-        if ( $retcode != 0 ) {
-            confess sprintf "command (" . join( " ", @cmd ) . " exited with code $retcode";
-        }
         if ( -z $class->paths( ["outjson"] ) ) {
             croak "JSON data file " . $class->paths( ["outjson"] ) . " is empty";
         }
