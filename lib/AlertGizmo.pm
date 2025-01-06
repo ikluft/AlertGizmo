@@ -296,18 +296,25 @@ sub net_get
     # send request, capture response
     my $ff = File::Fetch->new( uri => $source );
     my $content;
-    my $dest = ( defined $file_path ) ? $file_path : \$content;
-    $ff->fetch( to => $dest );
+    $ff->fetch( to => \$content );
 
     # abort on failure
     if ( $ff->error( false ) ) {
         AlertGizmo::Exception::NetworkGet->throw( "The request received an error: " . $ff->error( true ) );
     }
 
-    # return the content unless a file path was specified
+    # write the content and return if a file path was specified
     if ( defined $file_path ) {
+        open ( my $out_fh, ">", $file_path )
+            or AlertGizmo::Exception::NetworkGet->throw( "net_get: failed to save $file_path: $!" );
+        say $out_fh $content
+            or AlertGizmo::Exception::NetworkGet->throw( "net_get: failed to write to $file_path: $!" );
+        close $out_fh
+            or AlertGizmo::Exception::NetworkGet->throw( "net_get: failed to close $file_path: $!" );
         return;
     }
+
+    # return the content if a file path was not specified
     return $content;
 }
 
