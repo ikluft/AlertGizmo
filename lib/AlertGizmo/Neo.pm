@@ -170,6 +170,7 @@ sub diameter2bgcolor
 }
 
 # perform NEO query and save result in named file
+# TODO: merge into common function in parent class
 sub do_neo_query
 {
     my $class = shift;
@@ -182,7 +183,6 @@ sub do_neo_query
         say STDERR "*** skip API access in test mode ***";
     } else {
         my $url = sprintf $NEO_API_URL, $class->params( ["start_date"] );
-        my ( $outstr, $errstr );
         my $proxy = $class->config_proxy();
         try {
             $class->net_get( $url, { file => $class->paths( ["outjson"] ) } );
@@ -193,12 +193,6 @@ sub do_neo_query
         # check results of query
         if ( -z $class->paths( ["outjson"] ) ) {
             croak "JSON data file " . $class->paths( ["outjson"] ) . " is empty";
-        }
-        if ($errstr) {
-            say "stderr from command: $errstr";
-        }
-        if ($outstr) {
-            say "stdout from command: $outstr";
         }
     }
     return;
