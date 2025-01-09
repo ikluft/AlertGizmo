@@ -169,35 +169,6 @@ sub diameter2bgcolor
     return sprintf( "#%02X%02X%02X", $red, $green, $blue );
 }
 
-# perform NEO query and save result in named file
-# TODO: merge into common function in parent class
-sub do_neo_query
-{
-    my $class = shift;
-
-    # perform NEO query
-    if ( $class->config_test_mode() ) {
-        if ( not -e $class->paths( ["outlink"] ) ) {
-            croak "test mode requires " . $class->paths( ["outlink"] ) . " to exist";
-        }
-        say STDERR "*** skip API access in test mode ***";
-    } else {
-        my $url = sprintf $NEO_API_URL, $class->params( ["start_date"] );
-        my $proxy = $class->config_proxy();
-        try {
-            $class->net_get( $url, { file => $class->paths( ["outjson"] ) } );
-        } catch ( $e ) {
-            confess "failed to get URL ($url): " . $e;
-        }
-
-        # check results of query
-        if ( -z $class->paths( ["outjson"] ) ) {
-            croak "JSON data file " . $class->paths( ["outjson"] ) . " is empty";
-        }
-    }
-    return;
-}
-
 # get distance as km (convert from AU)
 sub get_dist_km
 {
@@ -281,7 +252,8 @@ sub pre_template
         $class->paths( [qw( outlink )] ) . "-" . $class->config_timestamp() );
 
     # perform NEO query
-    $class->do_neo_query();
+    my $url = sprintf $NEO_API_URL, $class->params( ["start_date"] );
+    $class->retrieve_url( $url );
 
     # read JSON into template data
     # in case of JSON error, allow these to crash the program here before proceeding to symlinks

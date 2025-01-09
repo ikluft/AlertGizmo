@@ -318,6 +318,35 @@ sub net_get
     return $content;
 }
 
+# perform network request for a URL and save result in named file
+# this is a common method that AlertGizmo as parent class provides to subclasses
+sub retrieve_url
+{
+    my ( $class, $url ) = @_;
+    my $paths = $class->paths();
+
+    # perform network request
+    if ( $class->config_test_mode() ) {
+        if ( not -e $paths->{outlink} ) {
+            croak "test mode requires $paths->{outlink} to exist";
+        }
+        say STDERR "*** skip network access in test mode ***";
+    } else {
+        my $proxy = $class->config_proxy();
+        try {
+            $class->net_get( $url, { file => $class->paths( ["outjson"] ) } );
+        } catch ( $e ) {
+            confess "failed to get URL ($url): " . $e;
+        }
+
+        # check results of request
+        if ( -z $paths->{outjson} ) {
+            croak "JSON data file " . $paths->{outjson} . " is empty";
+        }
+    }
+    return;
+}
+
 # inner mainline called from main() exception-catching wrapper
 sub main_inner
 {

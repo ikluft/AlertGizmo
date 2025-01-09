@@ -137,36 +137,6 @@ sub dt2dttz
     return $dt->ymd('-') . " " . $dt->hms(':') . " " . $dt->time_zone_short_name();
 }
 
-# perform SWPC request and save result in named file
-# TODO: merge into common function in parent class
-sub do_swpc_request
-{
-    my $class = shift;
-    my $paths = $class->paths();
-
-    # perform SWPC request
-    if ( $class->config_test_mode() ) {
-        if ( not -e $paths->{outlink} ) {
-            croak "test mode requires $paths->{outlink} to exist";
-        }
-        say STDERR "*** skip network access in test mode ***";
-    } else {
-        my $url   = $SWPC_JSON_URL;
-        my $proxy = $class->config_proxy();
-        try {
-            $class->net_get( $url, { file => $class->paths( ["outjson"] ) } );
-        } catch ( $e ) {
-            confess "failed to get URL ($url): " . $e;
-        }
-
-        # check results of request
-        if ( -z $paths->{outjson} ) {
-            croak "JSON data file " . $paths->{outjson} . " is empty";
-        }
-    }
-    return;
-}
-
 # parse a message entry
 sub parse_message
 {
@@ -613,7 +583,7 @@ sub pre_template
     $class->paths( ["outjson"], $outjson );
 
     # perform SWPC request
-    $class->do_swpc_request();
+    $class->retrieve_url( $SWPC_JSON_URL );
 
     # read JSON into template data
     # in case of JSON error, allow these to crash the program here before proceeding to symlinks
