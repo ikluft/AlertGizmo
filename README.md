@@ -1,7 +1,9 @@
-Tools for Space Alerts
-----------------------
+AlertGizmo
+----------
 
-This directory contains scripts I've written which monitor space-related alerts online. The common code among the scripts was pulled together into the AlertGizmo module. These can be run manually or from crontabs. (see example below)
+AlertGizmo originated as scripts I wrote to monitor space-related alerts online. The common code among the scripts was pulled together into the AlertGizmo module. These can be run manually or from crontabs. (see example below)
+
+## Directory structure
 
 - bin (script directory)
   - *[pull-nasa-neo.pl](bin/pull-nasa-neo.pl)* reads NASA JPL data on Near Earth Object (NEO) asteroid close approaches to Earth, within 2 lunar distances (LD) and makes a table of upcoming events and recent ones within 15 days.
@@ -18,7 +20,9 @@ This directory contains scripts I've written which monitor space-related alerts 
   - AlertGizmo/Neo.pm - AlertGizmo monitor for NASA JPL Near-Earth Object (NEO) close approach data
   - AlertGizmo/Swpc.pm - AlertGizmo monitor for NOAA Space Weather Prediction Center (SWPC) alerts, including aurora
 
-To run these scripts from a crontab, first use 'crontab -l' to determine if you have one set up, and that the crontab command is installed. (If it isn't installed, Linux packages such as [cronie](https://github.com/cronie-crond/cronie) can perform [modern cron](https://en.wikipedia.org/wiki/Cron#Modern_versions) functions. If on a small embedded Linux system, [BusyBox](https://en.wikipedia.org/wiki/BusyBox) or [Toybox](https://en.wikipedia.org/wiki/Toybox) also provide a crontab command.)
+## Running from a crontab
+
+To run AlertGizmo from a crontab, first use 'crontab -l' to determine if you have one set up, and that the crontab command is installed. (If it isn't installed, Linux packages such as [cronie](https://github.com/cronie-crond/cronie) can perform [modern cron](https://en.wikipedia.org/wiki/Cron#Modern_versions) functions. If on a small embedded Linux system, [BusyBox](https://en.wikipedia.org/wiki/BusyBox) or [Toybox](https://en.wikipedia.org/wiki/Toybox) also provide a crontab command.)
 
 When run in normal mode, the scripts pull new data from the network. When run in test mode with the --test flag on the command line, they use saved data from prior network accesses but do not make a new network access.
 
@@ -43,10 +47,9 @@ Then install the crontab by running:
 
     crontab my-crontab
 
-Ongoing experimentation
-=======================
+## Ongoing experimentation
 
-The SWPC alert script is derived from the NEO script. So they have some common code. Before making more similar scripts, it would be a good idea to make modules to combine their common features.
+The SWPC alert script is derived from the NEO script. So they had common code. Before making more similar scripts, it was considered a good idea to make modules to combine their common features. That became AlertGizmo. Now the door is open to add more modules on that foundation.
 
-Also, an outage in Tom Taylor's Mastodon "Low Flying Rocks" bot led me to the conclusion I should expand these to be able to post on Mastodon. I was already inspired by [XKCD comic #2979 "Sky Alarm"](https://xkcd.com/2979/) to go in that direction.
+An outage in Tom Taylor's Mastodon "Low Flying Rocks" bot led me to the conclusion I should expand these to be able to post on Mastodon. I was already inspired by [XKCD comic #2979 "Sky Alarm"](https://xkcd.com/2979/) to go in that direction.
 [![XKCD comic #2979 "Sky Alarm"](https://imgs.xkcd.com/comics/sky_alarm.png)](https://xkcd.com/2979/)
