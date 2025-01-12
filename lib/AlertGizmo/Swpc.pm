@@ -71,6 +71,7 @@ Readonly::Array my @INSTANTANEOUS_HEADERS =>
     ( "Threshold Reached", "Observed", "IP Shock Passage Observed", );
 Readonly::Scalar my $HIGHEST_LEVEL_HEADER => "Highest Storm Level Predicted by Day";
 Readonly::Scalar my $RETAIN_TIME          => 12;    # hours to keep items after expiration
+Readonly::Scalar my $MAX_DURATION         => DateTime::Duration->new( days => 6 );
 Readonly::Array my @TITLE_KEYS => ( "SUMMARY", "ALERT", "WATCH", "WARNING", "EXTENDED WARNING" );
 Readonly::Array my @LEVEL_COLORS =>
     ( "#bbb", "#F6EB14", "#FFC800", "#FF9600", "#FF0000", "#C80000" );    # NOAA scales
@@ -441,6 +442,7 @@ sub save_alert_status
         if ( exists $item_ref->{msg_data}{$end_hdr} ) {
             my $end_dt = $class->datestr2dt( $item_ref->{msg_data}{$end_hdr} );
             $item_ref->{derived}{end} = DateTime::Format::ISO8601->format_datetime($end_dt);
+
             last;
         }
     }
@@ -465,6 +467,21 @@ sub save_alert_status
     # if begin time was set but no end, copy begin time to end time
     if ( ( exists $item_ref->{derived}{begin} ) and ( not exists $item_ref->{derived}{end} ) ) {
         $item_ref->{derived}{end} = $item_ref->{derived}{begin};
+    }
+
+    # catch wrong-year bug in JPL data for alerts spanning New Year's Eve
+    # alerts of this kind expire Dec 30/31 the following year - truncate expiration to fixed number of days
+    if ( exists $item_ref->{derived}{end} and exists $item_ref->{derived}{begin} ) {
+        my $begin_dt = DateTime::Format::ISO8601->parse_datetime( $item_ref->{derived}{begin} );
+        my $end_dt = DateTime::Format::ISO8601->parse_datetime( $item_ref->{derived}{end} );
+        my $alert_duration = $end_dt - $begin_dt;
+        if ( DateTime::Duration->compare( $alert_duration, $MAX_DURATION, $begin_dt ) > 0 ) {
+            $item_ref->{derived}{end} = DateTime::Format::ISO8601->format_datetime(
+                DateTime::Format::ISO8601->parse_datetime( $item_ref->{derived}{begin} ) + $MAX_DURATION );
+            if ( AlertGizmo::Config->verbose() ) {
+                say STDERR "duration truncated: " . Dumper( $item_ref );
+            }
+        }
     }
 
     # if 'Highest Storm Level Predicted by Day' is set, use those dates for effective times
