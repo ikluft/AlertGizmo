@@ -470,14 +470,13 @@ sub save_alert_status
     }
 
     # catch wrong-year bug in JPL data for alerts spanning New Year's Eve
-    # alerts of this kind expire Dec 30/31 the following year - truncate expiration to fixed number of days
+    # alerts of this kind expire Dec 30/31 the following year - truncate expiration to $MAX_DURATION
     if ( exists $item_ref->{derived}{end} and exists $item_ref->{derived}{begin} ) {
         my $begin_dt = DateTime::Format::ISO8601->parse_datetime( $item_ref->{derived}{begin} );
         my $end_dt = DateTime::Format::ISO8601->parse_datetime( $item_ref->{derived}{end} );
         my $alert_duration = $end_dt - $begin_dt;
         if ( DateTime::Duration->compare( $alert_duration, $MAX_DURATION, $begin_dt ) > 0 ) {
-            $item_ref->{derived}{end} = DateTime::Format::ISO8601->format_datetime(
-                DateTime::Format::ISO8601->parse_datetime( $item_ref->{derived}{begin} ) + $MAX_DURATION );
+            $item_ref->{derived}{end} = DateTime::Format::ISO8601->format_datetime( $begin_dt + $MAX_DURATION );
             if ( AlertGizmo::Config->verbose() ) {
                 say STDERR "duration truncated: " . Dumper( $item_ref );
             }
