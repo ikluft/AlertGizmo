@@ -15,11 +15,11 @@ The subclasses of AlertGizmo are as follows:
 - bin (script directory)
   - *[pull-nasa-neo.pl](bin/pull-nasa-neo.pl)* reads NASA JPL data on Near Earth Object (NEO) asteroid close approaches to Earth, within 2 lunar distances (LD) and makes a table of upcoming events and recent ones within 15 days.
      - language: Perl5🧅
-     - dependencies: [Template Toolkit](http://www.template-toolkit.org/)
+     - dependencies: AlertGizmo::Neo, [Template Toolkit](http://www.template-toolkit.org/)
      - example template text: [close-approaches.tt](close-approaches.tt)
   - *[pull-swpc-alerts.pl](bin/pull-swpc-alerts.pl)* reads NOAA Space Weather Prediction Center (SWPC) alerts for solar flares and aurora
      - language: Perl5🧅
-     - dependencies: [Template Toolkit](http://www.template-toolkit.org/)
+     - dependencies: AlertGizmo::Swpc, [Template Toolkit](http://www.template-toolkit.org/)
      - example template text: [noaa-swpc-alerts.tt](noaa-swpc-alerts.tt)
 - lib (library directory)
   - AlertGizmo.pm - base class for AlertGizmo feed monitors
