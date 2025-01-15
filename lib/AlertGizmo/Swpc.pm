@@ -399,36 +399,10 @@ sub date_from_level_forecast
     return;
 }
 
-# save alert status - active, inactive, canceled, superseded
-sub save_alert_status
+# compute begin and end times for alert based on various headers as available
+sub compute_alert_range
 {
     my ( $class, $item_ref ) = @_;
-    my $params    = $class->params();
-    my $msgid     = $item_ref->{derived}{id};
-    my $serial    = $item_ref->{msg_data}{$SERIAL_HEADER};
-    my $timestamp = $class->config_timestamp();
-
-    # check if serial number is marked as canceled or superseded
-    if ( $params->{cancel}->contains($serial) ) {
-        $class->alert_set_cancel($msgid);
-        return;
-    }
-    if ( $params->{supersede}->contains($serial) ) {
-        $class->alert_set_supersede($msgid);
-        return;
-    }
-
-    # process cancellation of another serial number
-    if ( exists $item_ref->{msg_data}{$CANCEL_SERIAL_HEADER} ) {
-        $class->serial_cancel( $item_ref->{msg_data}{$CANCEL_SERIAL_HEADER} );
-        $class->alert_set_inactive($msgid);
-        return;
-    }
-
-    # process extension/superseding of another serial number
-    if ( exists $item_ref->{msg_data}{$EXTEND_SERIAL_HEADER} ) {
-        $class->serial_supersede( $item_ref->{msg_data}{$EXTEND_SERIAL_HEADER} );
-    }
 
     # set begin and expiration times based on various headers to that effect
     foreach my $begin_hdr (@BEGIN_HEADERS) {
@@ -483,6 +457,42 @@ sub save_alert_status
         }
     }
 
+    return;
+}
+
+# save alert status - active, inactive, canceled, superseded
+sub save_alert_status
+{
+    my ( $class, $item_ref ) = @_;
+    my $params    = $class->params();
+    my $msgid     = $item_ref->{derived}{id};
+    my $serial    = $item_ref->{msg_data}{$SERIAL_HEADER};
+    my $timestamp = $class->config_timestamp();
+
+    # check if serial number is marked as canceled or superseded
+    if ( $params->{cancel}->contains($serial) ) {
+        $class->alert_set_cancel($msgid);
+        return;
+    }
+    if ( $params->{supersede}->contains($serial) ) {
+        $class->alert_set_supersede($msgid);
+        return;
+    }
+
+    # process cancellation of another serial number
+    if ( exists $item_ref->{msg_data}{$CANCEL_SERIAL_HEADER} ) {
+        $class->serial_cancel( $item_ref->{msg_data}{$CANCEL_SERIAL_HEADER} );
+        $class->alert_set_inactive($msgid);
+        return;
+    }
+
+    # process extension/superseding of another serial number
+    if ( exists $item_ref->{msg_data}{$EXTEND_SERIAL_HEADER} ) {
+        $class->serial_supersede( $item_ref->{msg_data}{$EXTEND_SERIAL_HEADER} );
+    }
+
+    # set begin and expiration times based on various headers to that effect
+    $class->compute_alert_range( $item_ref );
     # if 'Highest Storm Level Predicted by Day' is set, use those dates for effective times
     $class->date_from_level_forecast($item_ref);
 
