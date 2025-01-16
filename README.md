@@ -1,11 +1,13 @@
 AlertGizmo
 ----------
 
-AlertGizmo originated as scripts I wrote to monitor space-related alerts online. The common code among the scripts was pulled together into the AlertGizmo module. These can be run manually or from crontabs. (see example below)
+AlertGizmo is a set of Perl modules which monitor for space-related events and generate summary pages. Other language implementations may follow, based on the Perl implementation as a prototype.
+
+It originated as scripts I wrote to monitor space-related alerts online. The common code among the scripts was pulled together into the AlertGizmo module. These can be run manually or from crontabs. (see example below)
 
 ## Subclasses
 
-The subclasses of AlertGizmo are as follows:
+The subclasses of AlertGizmo which handle the details of specific topics of space alert data are as follows:
 
 * AlertGizmo::Neo: monitor for NASA JPL Near-Earth Object (NEO) close approach data
 * AlertGizmo::Swpc: monitor for NOAA Space Weather Prediction Center (SWPC) alerts, including aurora
