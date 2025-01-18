@@ -1,7 +1,7 @@
 AlertGizmo
 ----------
 
-AlertGizmo is a set of Perl modules which monitor for space-related events and generate summary pages. Other language implementations may follow, based on the Perl implementation as a prototype.
+AlertGizmo is a set of Perl modules which monitor for space-related events and generate summary pages. The Perl implementation may later be used as a prototype for other language implementations.
 
 It originated as scripts I wrote to monitor space-related alerts online. The common code among the scripts was pulled together into the AlertGizmo module. These can be run manually or from crontabs. (see example below)
 
@@ -28,6 +28,59 @@ The subclasses of AlertGizmo which handle the details of specific topics of spac
   - AlertGizmo/Config.pm - configuration data for AlertGizmo classes
   - AlertGizmo/Neo.pm - AlertGizmo monitor for NASA JPL Near-Earth Object (NEO) close approach data
   - AlertGizmo/Swpc.pm - AlertGizmo monitor for NOAA Space Weather Prediction Center (SWPC) alerts, including aurora
+
+## Installation
+
+### Installation from CPAN
+
+This section will be filled in after AlertGizmo is uploaded to CPAN.
+
+### Installation from source code
+
+The source code repository is at [https://github.com/ikluft/AlertGizmo](https://github.com/ikluft/AlertGizmo).
+
+For a development environment, make sure Perl is installed. Check first if binary packages are available for your OS & platform. More information can be found at [https://metacpan.org/dist/perl/view/INSTALL](https://metacpan.org/dist/perl/view/INSTALL).
+
+Then install App::cpanminus (cpanm), Dist::Zilla (dzil) and Perl::Critic (perlcritic).
+
+On Debian-based Linux systems they can be installed with this command as root:
+
+    apt update
+    apt install cpanminus libdist-zilla-perl libperl-critic-perl
+
+On RPM-based Linux systems (Fedora, Red Hat and CentOS derivatives) as root:
+
+    dnf install --refresh perl-App-cpanminus perl-Dist-Zilla perl-Perl-Critic
+
+On Alpine Linux systems and containers:
+
+    apk update && apk upgrade
+    apk add make git perl perl-utils perl-alien-build perl-class-tiny perl-config-tiny perl-date-manip perl-datetime perl-datetime-locale perl-datetime-timezone perl-dbd-csv perl-dbd-sqlite perl-dbi perl-http-date perl-ipc-run perl-list-moreutils perl-list-someutils perl-log-dispatch perl-log-log4perl perl-module-build perl-moose perl-moosex-types perl-namespace-autoclean perl-net-ssleay perl-params-validate perl-perlio-utf8_strict perl-pod-parser perl-readonly perl-term-readkey perl-test-leaktrace perl-test-pod perl-test-warn perl-text-template perl-type-tiny perl-xml-dom perl-yaml
+    cpan -T App::cpanminus Dist::Zilla Perl::Critic </dev/null
+
+On operating systems which don't provide binary packages of App::cpanminus, Dist::Zilla or Perl::Critic, install them from CPAN with this command:
+
+    cpan -T App::cpanminus Dist::Zilla Perl::Critic </dev/null
+
+### Set up AlertGizmo
+
+Download AlertGizmo source code with the git command:
+
+    git clone https://github.com/ikluft/AlertGizmo.git
+
+Run these Dist::Zilla commands to set up the environment for build, test and install:
+
+    # note: if/when more language implementations begin, a step would be added to change into a subdirectory for Perl
+    dzil authordeps --missing | cpanm --notest
+    dzil listdeps --missing | cpanm --notest
+    dzil build
+    dzil test
+    dzil install
+
+Prior to submitting pull requests for consideration for inclusion in the package, additional tests can be performed with the author and/or release options:
+
+    dzil test --author
+    dzil test --release
 
 ## Running from a crontab
 
