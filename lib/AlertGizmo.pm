@@ -22,12 +22,25 @@ use Scalar::Util qw( blessed );
 use FindBin;
 use AlertGizmo::Config;
 use File::Basename;
+use File::Fetch;
 use Getopt::Long;
 use DateTime;
 use DateTime::Format::Flexible;
 use Template;
 use results;
 use Data::Dumper;
+
+# exceptions/errors
+use Exception::Class (
+    'AlertGizmo::Exception',
+
+    'AlertGizmo::Exception::NetworkGet' => {
+        isa         => 'AlertGizmo::Exception',
+        alias       => 'throw_network_get',
+        fields      => [ qw( client )],
+        description => "Failed to access feed source",
+    },
+);
 
 # initialize class static variables
 AlertGizmo::Config->accessor( ["options"], {} );
@@ -261,6 +274,79 @@ sub test_dump
     return;
 }
 
+# network access utility function provided for use by subclasses
+# originally based on WebFetch's get() method, modified to use File::Fetch instead
+sub net_get
+{
+    my ( $class, $source, $params ) = @_;
+
+    if ( not defined $source ) {
+        AlertGizmo::Exception::NetworkGet->throw( "net_get: URI/URL source parameter missing" );
+    }
+    AlertGizmo::Config->verbose() and say STDERR "net_get(" . $source . ")\n";
+
+    # unpack parameters if present
+    my $file_path;
+    if (( defined $params ) and ( ref $params eq "HASH" )) {
+        if ( exists $params->{file} ) {
+            $file_path = $params->{file};
+        }
+    }
+
+    # send request, capture response
+    my $ff = File::Fetch->new( uri => $source );
+    my $content;
+    $ff->fetch( to => \$content );
+
+    # abort on failure
+    if ( $ff->error( false ) ) {
+        AlertGizmo::Exception::NetworkGet->throw( "The request received an error: " . $ff->error( true ) );
+    }
+
+    # write the content and return if a file path was specified
+    if ( defined $file_path ) {
+        open ( my $out_fh, ">", $file_path )
+            or AlertGizmo::Exception::NetworkGet->throw( "net_get: failed to save $file_path: $!" );
+        say $out_fh $content
+            or AlertGizmo::Exception::NetworkGet->throw( "net_get: failed to write to $file_path: $!" );
+        close $out_fh
+            or AlertGizmo::Exception::NetworkGet->throw( "net_get: failed to close $file_path: $!" );
+        return;
+    }
+
+    # return the content if a file path was not specified
+    return $content;
+}
+
+# perform network request for a URL and save result in named file
+# this is a common method that AlertGizmo as parent class provides to subclasses
+sub retrieve_url
+{
+    my ( $class, $url ) = @_;
+    my $paths = $class->paths();
+
+    # perform network request
+    if ( $class->config_test_mode() ) {
+        if ( not -e $paths->{outlink} ) {
+            croak "test mode requires $paths->{outlink} to exist";
+        }
+        say STDERR "*** skip network access in test mode ***";
+    } else {
+        my $proxy = $class->config_proxy();
+        try {
+            $class->net_get( $url, { file => $class->paths( ["outjson"] ) } );
+        } catch ( $e ) {
+            confess "failed to get URL ($url): " . $e;
+        }
+
+        # check results of request
+        if ( -z $paths->{outjson} ) {
+            croak "JSON data file " . $paths->{outjson} . " is empty";
+        }
+    }
+    return;
+}
+
 # inner mainline called from main() exception-catching wrapper
 sub main_inner
 {
@@ -367,7 +453,7 @@ AlertGizmo is available by downloading from the Github repository.
 
 =head2 Perl Development Environment
 
-The source code repository is in a subdirectory at L<https://github.com/ikluft/ikluft-tools/tree/master/space-alerts> .
+The source code repository is at L<https://github.com/ikluft/AlertGizmo> .
 
 For a development environment, make sure Perl is installed. Check first if binary packages are available for your OS & p
 latform. More information can be found at L<https://metacpan.org/dist/perl/view/INSTALL>.
@@ -404,14 +490,25 @@ TBD
 
 =head1 FUNCTIONS AND METHODS
 
+=over 4
+
+=item $obj->net_get ( $url )
+
+This WebFetch utility function will get a URL and return a reference
+to a scalar with the retrieved contents.
+
+In case of an error, it throws an exception.
+
+=back
+
 =head1 LICENSE
 
 =head1 SEE ALSO
 
 =head1 BUGS AND LIMITATIONS
 
-Please report bugs via GitHub at L<https://github.com/ikluft/ikluft-tools/issues>
+Please report bugs via GitHub at L<https://github.com/ikluft/AlertGizmo/issues>
 
-Patches and enhancements may be submitted via a pull request at L<https://github.com/ikluft/ikluft-tools/pulls>
+Patches and enhancements may be submitted via a pull request at L<https://github.com/ikluft/AlertGizmo/pulls>
 
 =cut

@@ -14,6 +14,6 @@ Revision history for AlertGizmo
  [MINOR]
 
  [REVISION]
- - initial revision
+ - initial revision with pull-nasa-neo.pl & pull-swpc-alerts.pl scripts and AlertGizmo back-end
 
  [SECURITY]

@@ -319,8 +319,8 @@ sub _str_is_int
 
 =head1 BUGS AND LIMITATIONS
 
-Please report bugs via GitHub at L<https://github.com/ikluft/ikluft-tools/issues>
+Please report bugs via GitHub at L<https://github.com/ikluft/AlertGizmo/issues>
 
-Patches and enhancements may be submitted via a pull request at L<https://github.com/ikluft/ikluft-tools/pulls>
+Patches and enhancements may be submitted via a pull request at L<https://github.com/ikluft/AlertGizmo/pulls>
 
 =cut

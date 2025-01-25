@@ -1,16 +1,27 @@
-Tools for Space Alerts
-----------------------
+AlertGizmo
+----------
 
-This directory contains scripts I've written which monitor space-related alerts online. The common code among the scripts was pulled together into the AlertGizmo module. These can be run manually or from crontabs. (see example below)
+AlertGizmo is a set of Perl modules which monitor for space-related events and generate summary pages. The Perl implementation may later be used as a prototype for other language implementations.
+
+It originated as scripts I wrote to monitor space-related alerts online. The common code among the scripts was pulled together into the AlertGizmo module. These can be run manually or from crontabs. (see example below)
+
+## Subclasses
+
+The subclasses of AlertGizmo which handle the details of specific topics of space alert data are as follows:
+
+* AlertGizmo::Neo: monitor for NASA JPL Near-Earth Object (NEO) close approach data
+* AlertGizmo::Swpc: monitor for NOAA Space Weather Prediction Center (SWPC) alerts, including aurora
+
+## Directory structure
 
 - bin (script directory)
   - *[pull-nasa-neo.pl](bin/pull-nasa-neo.pl)* reads NASA JPL data on Near Earth Object (NEO) asteroid close approaches to Earth, within 2 lunar distances (LD) and makes a table of upcoming events and recent ones within 15 days.
      - language: Perl5🧅
-     - dependencies: [curl](https://curl.se/), [Template Toolkit](http://www.template-toolkit.org/)
+     - dependencies: AlertGizmo::Neo, [Template Toolkit](http://www.template-toolkit.org/)
      - example template text: [close-approaches.tt](close-approaches.tt)
   - *[pull-swpc-alerts.pl](bin/pull-swpc-alerts.pl)* reads NOAA Space Weather Prediction Center (SWPC) alerts for solar flares and aurora
      - language: Perl5🧅
-     - dependencies: [curl](https://curl.se/), [Template Toolkit](http://www.template-toolkit.org/)
+     - dependencies: AlertGizmo::Swpc, [Template Toolkit](http://www.template-toolkit.org/)
      - example template text: [noaa-swpc-alerts.tt](noaa-swpc-alerts.tt)
 - lib (library directory)
   - AlertGizmo.pm - base class for AlertGizmo feed monitors
@@ -18,7 +29,62 @@ This directory contains scripts I've written which monitor space-related alerts 
   - AlertGizmo/Neo.pm - AlertGizmo monitor for NASA JPL Near-Earth Object (NEO) close approach data
   - AlertGizmo/Swpc.pm - AlertGizmo monitor for NOAA Space Weather Prediction Center (SWPC) alerts, including aurora
 
-To run these scripts from a crontab, first use 'crontab -l' to determine if you have one set up, and that the crontab command is installed. (If it isn't installed, Linux packages such as [cronie](https://github.com/cronie-crond/cronie) can perform [modern cron](https://en.wikipedia.org/wiki/Cron#Modern_versions) functions. If on a small embedded Linux system, [BusyBox](https://en.wikipedia.org/wiki/BusyBox) or [Toybox](https://en.wikipedia.org/wiki/Toybox) also provide a crontab command.)
+## Installation
+
+### Installation from CPAN
+
+This section will be filled in after AlertGizmo is uploaded to CPAN.
+
+### Installation from source code
+
+The source code repository is at [https://github.com/ikluft/AlertGizmo](https://github.com/ikluft/AlertGizmo).
+
+For a development environment, make sure Perl is installed. Check first if binary packages are available for your OS & platform. More information can be found at [https://metacpan.org/dist/perl/view/INSTALL](https://metacpan.org/dist/perl/view/INSTALL).
+
+Then install App::cpanminus (cpanm), Dist::Zilla (dzil) and Perl::Critic (perlcritic).
+
+On Debian-based Linux systems they can be installed with this command as root:
+
+    apt update
+    apt install cpanminus libdist-zilla-perl libperl-critic-perl
+
+On RPM-based Linux systems (Fedora, Red Hat and CentOS derivatives) as root:
+
+    dnf install --refresh perl-App-cpanminus perl-Dist-Zilla perl-Perl-Critic
+
+On Alpine Linux systems and containers:
+
+    apk update && apk upgrade
+    apk add make git perl perl-utils perl-alien-build perl-class-tiny perl-config-tiny perl-date-manip perl-datetime perl-datetime-locale perl-datetime-timezone perl-dbd-csv perl-dbd-sqlite perl-dbi perl-http-date perl-ipc-run perl-list-moreutils perl-list-someutils perl-log-dispatch perl-log-log4perl perl-module-build perl-moose perl-moosex-types perl-namespace-autoclean perl-net-ssleay perl-params-validate perl-perlio-utf8_strict perl-pod-parser perl-readonly perl-term-readkey perl-test-leaktrace perl-test-pod perl-test-warn perl-text-template perl-type-tiny perl-xml-dom perl-yaml
+    cpan -T App::cpanminus Dist::Zilla Perl::Critic </dev/null
+
+On operating systems which don't provide binary packages of App::cpanminus, Dist::Zilla or Perl::Critic, install them from CPAN with this command:
+
+    cpan -T App::cpanminus Dist::Zilla Perl::Critic </dev/null
+
+### Set up AlertGizmo
+
+Download AlertGizmo source code with the git command:
+
+    git clone https://github.com/ikluft/AlertGizmo.git
+
+Run these Dist::Zilla commands to set up the environment for build, test and install:
+
+    # note: if/when more language implementations begin, a step would be added to change into a subdirectory for Perl
+    dzil authordeps --missing | cpanm --notest
+    dzil listdeps --missing | cpanm --notest
+    dzil build
+    dzil test
+    dzil install
+
+Prior to submitting pull requests for consideration for inclusion in the package, additional tests can be performed with the author and/or release options:
+
+    dzil test --author
+    dzil test --release
+
+## Running from a crontab
+
+To run AlertGizmo from a crontab, first use 'crontab -l' to determine if you have one set up, and that the crontab command is installed. (If it isn't installed, Linux packages such as [cronie](https://github.com/cronie-crond/cronie) can perform [modern cron](https://en.wikipedia.org/wiki/Cron#Modern_versions) functions. If on a small embedded Linux system, [BusyBox](https://en.wikipedia.org/wiki/BusyBox) or [Toybox](https://en.wikipedia.org/wiki/Toybox) also provide a crontab command.)
 
 When run in normal mode, the scripts pull new data from the network. When run in test mode with the --test flag on the command line, they use saved data from prior network accesses but do not make a new network access.
 
@@ -43,10 +109,9 @@ Then install the crontab by running:
 
     crontab my-crontab
 
-Ongoing experimentation
-=======================
+## Ongoing experimentation
 
-The SWPC alert script is derived from the NEO script. So they have some common code. Before making more similar scripts, it would be a good idea to make modules to combine their common features.
+The SWPC alert script is derived from the NEO script. So they had common code. Before making more similar scripts, it was considered a good idea to make modules to combine their common features. That became AlertGizmo. Now the door is open to add more modules on that foundation.
 
-Also, an outage in Tom Taylor's Mastodon "Low Flying Rocks" bot led me to the conclusion I should expand these to be able to post on Mastodon. I was already inspired by [XKCD comic #2979 "Sky Alarm"](https://xkcd.com/2979/) to go in that direction.
+An outage in Tom Taylor's Mastodon "Low Flying Rocks" bot led me to the conclusion I should expand these to be able to post on Mastodon. I was already inspired by [XKCD comic #2979 "Sky Alarm"](https://xkcd.com/2979/) to go in that direction.
 [![XKCD comic #2979 "Sky Alarm"](https://imgs.xkcd.com/comics/sky_alarm.png)](https://xkcd.com/2979/)

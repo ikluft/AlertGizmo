@@ -24,7 +24,6 @@ use Carp qw(croak confess);
 use File::Basename;
 use DateTime;
 use DateTime::Format::Flexible;
-use IPC::Run;
 use File::Slurp;
 use IO::Interactive qw(is_interactive);
 use JSON;
@@ -170,54 +169,6 @@ sub diameter2bgcolor
     return sprintf( "#%02X%02X%02X", $red, $green, $blue );
 }
 
-# perform NEO query and save result in named file
-sub do_neo_query
-{
-    my $class = shift;
-
-    # perform NEO query
-    if ( $class->config_test_mode() ) {
-        if ( not -e $class->paths( ["outlink"] ) ) {
-            croak "test mode requires " . $class->paths( ["outlink"] ) . " to exist";
-        }
-        say STDERR "*** skip API access in test mode ***";
-    } else {
-        my $url = sprintf $NEO_API_URL, $class->params( ["start_date"] );
-        my ( $outstr, $errstr );
-        my $proxy = $class->config_proxy();
-        my @cmd   = (
-            "/usr/bin/curl", "--silent", ( ( defined $proxy ) ? ( "--proxy", $proxy ) : () ),
-            "--output", $class->paths( ["outjson"] ), $url
-        );
-        IPC::Run::run( \@cmd, '<', \undef, '>', \$outstr, '2>', \$errstr );
-
-        # check results of query
-        if ( $? == -1 ) {
-            confess "failed to execute command (" . join( " ", @cmd ) . "): $!";
-        }
-        my $retcode = $? >> 8;
-        if ( $? & 127 ) {
-            confess sprintf "command ("
-                . join( " ", @cmd )
-                . " child died with signal %d, %s coredump\n",
-                ( $? & 127 ), ( $? & 128 ) ? 'with' : 'without';
-        }
-        if ( $retcode != 0 ) {
-            confess sprintf "command (" . join( " ", @cmd ) . " exited with code $retcode";
-        }
-        if ( -z $class->paths( ["outjson"] ) ) {
-            croak "JSON data file " . $class->paths( ["outjson"] ) . " is empty";
-        }
-        if ($errstr) {
-            say "stderr from command: $errstr";
-        }
-        if ($outstr) {
-            say "stdout from command: $outstr";
-        }
-    }
-    return;
-}
-
 # get distance as km (convert from AU)
 sub get_dist_km
 {
@@ -301,7 +252,8 @@ sub pre_template
         $class->paths( [qw( outlink )] ) . "-" . $class->config_timestamp() );
 
     # perform NEO query
-    $class->do_neo_query();
+    my $url = sprintf $NEO_API_URL, $class->params( ["start_date"] );
+    $class->retrieve_url( $url );
 
     # read JSON into template data
     # in case of JSON error, allow these to crash the program here before proceeding to symlinks
@@ -432,8 +384,8 @@ AlertGizmo::Neo reads data on NASA JPL Near Earth Object "NEO" passes, producing
 
 =head1 BUGS AND LIMITATIONS
 
-Please report bugs via GitHub at L<https://github.com/ikluft/ikluft-tools/issues>
+Please report bugs via GitHub at L<https://github.com/ikluft/AlertGizmo/issues>
 
-Patches and enhancements may be submitted via a pull request at L<https://github.com/ikluft/ikluft-tools/pulls>
+Patches and enhancements may be submitted via a pull request at L<https://github.com/ikluft/AlertGizmo/pulls>
 
 =cut

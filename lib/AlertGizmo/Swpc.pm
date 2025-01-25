@@ -26,7 +26,6 @@ use FindBin;
 use DateTime;
 use DateTime::Duration;
 use DateTime::Format::ISO8601;
-use IPC::Run;
 use Set::Tiny;
 use File::Slurp;
 use IO::Interactive qw(is_interactive);
@@ -72,6 +71,7 @@ Readonly::Array my @INSTANTANEOUS_HEADERS =>
     ( "Threshold Reached", "Observed", "IP Shock Passage Observed", );
 Readonly::Scalar my $HIGHEST_LEVEL_HEADER => "Highest Storm Level Predicted by Day";
 Readonly::Scalar my $RETAIN_TIME          => 12;    # hours to keep items after expiration
+Readonly::Scalar my $MAX_DURATION         => DateTime::Duration->new( days => 6 );
 Readonly::Array my @TITLE_KEYS => ( "SUMMARY", "ALERT", "WATCH", "WARNING", "EXTENDED WARNING" );
 Readonly::Array my @LEVEL_COLORS =>
     ( "#bbb", "#F6EB14", "#FFC800", "#FF9600", "#FF0000", "#C80000" );    # NOAA scales
@@ -136,57 +136,6 @@ sub dt2dttz
 {
     my $dt = shift;
     return $dt->ymd('-') . " " . $dt->hms(':') . " " . $dt->time_zone_short_name();
-}
-
-# perform SWPC request and save result in named file
-sub do_swpc_request
-{
-    my $class = shift;
-    my $paths = $class->paths();
-
-    # perform SWPC request
-    if ( $class->config_test_mode() ) {
-        if ( not -e $paths->{outlink} ) {
-            croak "test mode requires $paths->{outlink} to exist";
-        }
-        say STDERR "*** skip network access in test mode ***";
-    } else {
-        my $url   = $SWPC_JSON_URL;
-        my $proxy = $class->config_proxy();
-        my ( $outstr, $errstr );
-        my @cmd = (
-            "/usr/bin/curl", "--silent", ( defined $proxy ? ( "--proxy", $proxy ) : () ),
-            "--output", $paths->{outjson}, $url
-        );
-        IPC::Run::run( \@cmd, '<', \undef, '>', \$outstr, '2>', \$errstr );
-
-        # check results of request
-        if ( $? == -1 ) {
-            confess "failed to execute command (" . join( " ", @cmd ) . "): $!";
-        }
-        my $retcode = $? >> 8;
-        if ( $? & 127 ) {
-            confess sprintf "command ("
-                . join( " ", @cmd )
-                . " child died with signal %d, %s coredump\n",
-                ( $? & 127 ), ( $? & 128 ) ? 'with' : 'without';
-        }
-        if ( $retcode != 0 ) {
-            confess sprintf "command (" . join( " ", @cmd ) . " exited with code $retcode";
-        }
-        if ( -z $paths->{outjson} ) {
-            croak "JSON data file " . $paths->{outjson} . " is empty";
-        }
-        if ($errstr) {
-            say STDERR "stderr from command: $errstr";
-            $class->params( ["curl_stderr"], $errstr );
-        }
-        if ($outstr) {
-            say STDERR "stdout from command: $outstr";
-            $class->params( ["curl_stdout"], $outstr );
-        }
-    }
-    return;
 }
 
 # parse a message entry
@@ -450,6 +399,67 @@ sub date_from_level_forecast
     return;
 }
 
+# compute begin and end times for alert based on various headers as available
+sub compute_alert_range
+{
+    my ( $class, $item_ref ) = @_;
+
+    # set begin and expiration times based on various headers to that effect
+    foreach my $begin_hdr (@BEGIN_HEADERS) {
+        if ( exists $item_ref->{msg_data}{$begin_hdr} ) {
+            my $begin_dt = $class->datestr2dt( $item_ref->{msg_data}{$begin_hdr} );
+            $item_ref->{derived}{begin} = DateTime::Format::ISO8601->format_datetime($begin_dt);
+            last;
+        }
+    }
+    foreach my $end_hdr (@END_HEADERS) {
+        if ( exists $item_ref->{msg_data}{$end_hdr} ) {
+            my $end_dt = $class->datestr2dt( $item_ref->{msg_data}{$end_hdr} );
+            $item_ref->{derived}{end} = DateTime::Format::ISO8601->format_datetime($end_dt);
+
+            last;
+        }
+    }
+
+    # set times for instantaneous events
+    foreach my $instant_hdr (@INSTANTANEOUS_HEADERS) {
+        if ( exists $item_ref->{msg_data}{$instant_hdr} ) {
+            my $tr_dt = $class->datestr2dt( $item_ref->{msg_data}{$instant_hdr} );
+            $item_ref->{derived}{end}   = DateTime::Format::ISO8601->format_datetime($tr_dt);
+            $item_ref->{derived}{begin} = $item_ref->{derived}{end};
+            last;
+        }
+    }
+
+    # if end time was set but no begin, use issue time
+    if ( ( not exists $item_ref->{derived}{begin} ) and ( exists $item_ref->{derived}{end} ) ) {
+        $item_ref->{derived}{begin} =
+            DateTime::Format::ISO8601->format_datetime(
+            $class->issue2dt( $item_ref->{issue_datetime} ) );
+    }
+
+    # if begin time was set but no end, copy begin time to end time
+    if ( ( exists $item_ref->{derived}{begin} ) and ( not exists $item_ref->{derived}{end} ) ) {
+        $item_ref->{derived}{end} = $item_ref->{derived}{begin};
+    }
+
+    # catch wrong-year bug in JPL data for alerts spanning New Year's Eve
+    # alerts of this kind expire Dec 30/31 the following year - truncate expiration to $MAX_DURATION
+    if ( exists $item_ref->{derived}{end} and exists $item_ref->{derived}{begin} ) {
+        my $begin_dt = DateTime::Format::ISO8601->parse_datetime( $item_ref->{derived}{begin} );
+        my $end_dt = DateTime::Format::ISO8601->parse_datetime( $item_ref->{derived}{end} );
+        my $alert_duration = $end_dt - $begin_dt;
+        if ( DateTime::Duration->compare( $alert_duration, $MAX_DURATION, $begin_dt ) > 0 ) {
+            $item_ref->{derived}{end} = DateTime::Format::ISO8601->format_datetime( $begin_dt + $MAX_DURATION );
+            if ( AlertGizmo::Config->verbose() ) {
+                say STDERR "duration truncated: " . Dumper( $item_ref );
+            }
+        }
+    }
+
+    return;
+}
+
 # save alert status - active, inactive, canceled, superseded
 sub save_alert_status
 {
@@ -482,43 +492,7 @@ sub save_alert_status
     }
 
     # set begin and expiration times based on various headers to that effect
-    foreach my $begin_hdr (@BEGIN_HEADERS) {
-        if ( exists $item_ref->{msg_data}{$begin_hdr} ) {
-            my $begin_dt = $class->datestr2dt( $item_ref->{msg_data}{$begin_hdr} );
-            $item_ref->{derived}{begin} = DateTime::Format::ISO8601->format_datetime($begin_dt);
-            last;
-        }
-    }
-    foreach my $end_hdr (@END_HEADERS) {
-        if ( exists $item_ref->{msg_data}{$end_hdr} ) {
-            my $end_dt = $class->datestr2dt( $item_ref->{msg_data}{$end_hdr} );
-            $item_ref->{derived}{end} = DateTime::Format::ISO8601->format_datetime($end_dt);
-            last;
-        }
-    }
-
-    # set times for instantaneous events
-    foreach my $instant_hdr (@INSTANTANEOUS_HEADERS) {
-        if ( exists $item_ref->{msg_data}{$instant_hdr} ) {
-            my $tr_dt = $class->datestr2dt( $item_ref->{msg_data}{$instant_hdr} );
-            $item_ref->{derived}{end}   = DateTime::Format::ISO8601->format_datetime($tr_dt);
-            $item_ref->{derived}{begin} = $item_ref->{derived}{end};
-            last;
-        }
-    }
-
-    # if end time was set but no begin, use issue time
-    if ( ( not exists $item_ref->{derived}{begin} ) and ( exists $item_ref->{derived}{end} ) ) {
-        $item_ref->{derived}{begin} =
-            DateTime::Format::ISO8601->format_datetime(
-            $class->issue2dt( $item_ref->{issue_datetime} ) );
-    }
-
-    # if begin time was set but no end, copy begin time to end time
-    if ( ( exists $item_ref->{derived}{begin} ) and ( not exists $item_ref->{derived}{end} ) ) {
-        $item_ref->{derived}{end} = $item_ref->{derived}{begin};
-    }
-
+    $class->compute_alert_range( $item_ref );
     # if 'Highest Storm Level Predicted by Day' is set, use those dates for effective times
     $class->date_from_level_forecast($item_ref);
 
@@ -635,7 +609,7 @@ sub pre_template
     $class->paths( ["outjson"], $outjson );
 
     # perform SWPC request
-    $class->do_swpc_request();
+    $class->retrieve_url( $SWPC_JSON_URL );
 
     # read JSON into template data
     # in case of JSON error, allow these to crash the program here before proceeding to symlinks
@@ -715,8 +689,8 @@ AlertGizmo::Swpc reads data from NOAA's Space Weather Prediction Center (SWPC) o
 
 =head1 BUGS AND LIMITATIONS
 
-Please report bugs via GitHub at L<https://github.com/ikluft/ikluft-tools/issues>
+Please report bugs via GitHub at L<https://github.com/ikluft/AlertGizmo/issues>
 
-Patches and enhancements may be submitted via a pull request at L<https://github.com/ikluft/ikluft-tools/pulls>
+Patches and enhancements may be submitted via a pull request at L<https://github.com/ikluft/AlertGizmo/pulls>
 
 =cut
