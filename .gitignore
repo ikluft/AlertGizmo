@@ -13,7 +13,7 @@ cover_db/
 # Devel::NYTProf
 nytprof.out
 
-# Dist::Zilla
+# Dizt::Zilla
 /.build/
 
 # Module::Build
