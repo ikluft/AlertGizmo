@@ -685,6 +685,9 @@ AlertGizmo::Swpc reads data from NOAA's Space Weather Prediction Center (SWPC) o
 
 =head1 LICENSE
 
+I<AlertGizmo> and its submodules are Open Source software licensed under the GNU General Public License Version 3.
+See L<https://www.gnu.org/licenses/gpl-3.0-standalone.html>.
+
 =head1 SEE ALSO
 
 =head1 BUGS AND LIMITATIONS
