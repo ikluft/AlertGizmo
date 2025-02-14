@@ -65,4 +65,38 @@ sub post_template
 
 1;
 
-# TODO - continue converting APOD script to AlertGizmo submodule
+=pod
+
+=encoding utf8
+
+=head1 SYNOPSIS
+
+    use AlertGizmo;
+    use AlertGizmo::Apod;
+
+    # set implementation subclass to AlertGizmo::Apod, then run AlertGizmo's main()
+    AlertGizmo::Apod->set_class();
+    AlertGizmo->main();
+
+=head1 DESCRIPTION
+
+AlertGizmo::Apod reads NASA's daily Astronomy Picture of the Day (APOD) data. It makes an HTML table of recent APOD imagery.
+
+=head1 INSTALLATION
+
+=head1 FUNCTIONS AND METHODS
+
+=head1 LICENSE
+
+I<AlertGizmo> and its submodules are Open Source software licensed under the GNU General Public License Version 3.
+See L<https://www.gnu.org/licenses/gpl-3.0-standalone.html>.
+
+=head1 SEE ALSO
+
+=head1 BUGS AND LIMITATIONS
+
+Please report bugs via GitHub at L<https://github.com/ikluft/AlertGizmo/issues>
+
+Patches and enhancements may be submitted via a pull request at L<https://github.com/ikluft/AlertGizmo/pulls>
+
+=cut
