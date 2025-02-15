@@ -29,6 +29,14 @@ Readonly::Scalar my $RSS_XSL_STYLESHEET => "rss.xsl";
 Readonly::Scalar my $TEMPLATE      => "apod-alerts.tt";
 Readonly::Scalar my $OUTHTML       => "apod-alerts.html";
 
+# get APoD feed and save result in named file
+sub read_apod_feed
+{
+    # read APoD feed
+    __PACKAGE__->retrieve_url( $APOD_RSS_URL );
+    return;
+}
+
 # get template path for this subclass
 # class method
 sub path_template
