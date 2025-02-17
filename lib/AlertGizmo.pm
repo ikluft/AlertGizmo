@@ -486,7 +486,50 @@ om CPAN with this command:
 
 =head2 Set up AlertGizmo
 
-TBD
+Download AlertGizmo source code with the git command:
+
+    git clone https://github.com/ikluft/AlertGizmo.git
+
+Run these Dist::Zilla commands to set up the environment for build, test and install:
+
+    # note: if/when more language implementations begin, a step would be added to change into a subdirectory for Perl
+    dzil authordeps --missing | cpanm --notest
+    dzil listdeps --missing | cpanm --notest
+    dzil build
+    dzil test
+    dzil install
+
+Prior to submitting pull requests for consideration for inclusion in the package, additional tests can be performed with the author and/or release options:
+
+    dzil test --author
+    dzil test --release
+
+=head2 Running from a crontab
+
+To run AlertGizmo from a crontab, first use 'crontab -l' to determine if you have one set up, and that the crontab command is installed. (If it isn't installed, Linux packages such as L<cronie|https://github.com/cronie-crond/cronie> can perform L<modern cron|https://en.wikipedia.org/wiki/Cron#Modern_versions> functions. If on a small embedded Linux system, L<BusyBox|https://en.wikipedia.org/wiki/BusyBox> or L<Toybox|https://en.wikipedia.org/wiki/Toybox> also provide a crontab command.)
+
+When run in normal mode, the scripts pull new data from the network. When run in test mode with the --test flag on the command line, they use saved data from prior network accesses but do not make a new network access.
+
+If you have a crontab already, preserve its contents by saving it to a file we'll call 'my-crontab' with this command:
+
+    crontab -l > my-crontab
+
+Otherwise create the 'my-crontab' file empty from scratch with a text editor.
+
+Add these lines to the 'my-crontab' file, replacing "path/to/script" with your path where these scripts are installed and using your local time zone instead of US/Pacific (the author's local time zone).
+
+    CRON_TZ=UTC
+
+    # access NASA JPL NEO API 8 times per day and just after midnight UTC
+    1 0 * * *       $HOME/path/to/script/pull-nasa-neo.pl --tz="US/Pacific"
+    31~44 */3 * * * $HOME/path/to/script/pull-nasa-neo.pl --tz="US/Pacific"
+
+    # access NOAA Space Weather Predition Center alerts every 2 hours
+    11~24 */2 * * * $HOME/path/to/script/pull-swpc-alerts.pl --tz="US/Pacific"
+
+Then install the crontab by running:
+
+    crontab my-crontab
 
 =head1 FUNCTIONS AND METHODS
 
