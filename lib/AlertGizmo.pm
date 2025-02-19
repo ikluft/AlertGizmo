@@ -551,6 +551,8 @@ See L<https://www.gnu.org/licenses/gpl-3.0-standalone.html>.
 
 =head1 SEE ALSO
 
+L<WebFetch>, L<XML::Feed>
+
 =head1 BUGS AND LIMITATIONS
 
 Please report bugs via GitHub at L<https://github.com/ikluft/AlertGizmo/issues>
