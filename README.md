@@ -121,3 +121,7 @@ The SWPC alert script is derived from the NEO script. So they had common code. B
 
 An outage in Tom Taylor's Mastodon "Low Flying Rocks" bot led me to the conclusion I should expand these to be able to post on Mastodon. I was already inspired by [XKCD comic #2979 "Sky Alarm"](https://xkcd.com/2979/) to go in that direction.
 [![XKCD comic #2979 "Sky Alarm"](https://imgs.xkcd.com/comics/sky_alarm.png)](https://xkcd.com/2979/)
+
+## Current development plans
+
+Current plans include making a NASA APOD reader (in progress as Apod.pm), a table image generator as an alternative to HTML output, and a Mastodon client to post the images and summary text as periodic updates.
