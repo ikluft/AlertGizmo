@@ -9,7 +9,7 @@ It originated as scripts I wrote to monitor space-related alerts online. The com
 
 The subclasses of AlertGizmo which handle the details of specific topics of space alert data are as follows:
 
-* AlertGizmo::Apod: monitor for NASA Astronomy Picture of the Day (APOD) feed
+* AlertGizmo::Apod: monitor for NASA Astronomy Picture of the Day (APOD) feed (work in progress)
 * AlertGizmo::Neo: monitor for NASA JPL Near-Earth Object (NEO) close approach data
 * AlertGizmo::Swpc: monitor for NOAA Space Weather Prediction Center (SWPC) alerts, including aurora
 
@@ -24,14 +24,14 @@ The subclasses of AlertGizmo which handle the details of specific topics of spac
      - language: Perl5🧅
      - dependencies: AlertGizmo::Swpc, [Template Toolkit](http://www.template-toolkit.org/)
      - example template text: [noaa-swpc-alerts.tt](noaa-swpc-alerts.tt)
-  - *[pull-nasa-apod.pl](bin/pull-nasa-apod.pl)* reads NASA Astronomy Picture of the Day (APOD) feed
+  - *[pull-nasa-apod.pl](bin/pull-nasa-apod.pl)* reads NASA Astronomy Picture of the Day (APOD) feed (work in progress)
      - language: Perl5🧅
      - dependencies: AlertGizmo::Apod, [Template Toolkit](http://www.template-toolkit.org/)
      - example template text: [nasa-apod-alerts.tt](nasa-apod-alerts.tt)
 - lib (library directory)
   - AlertGizmo.pm - base class for AlertGizmo feed monitors
   - AlertGizmo/Config.pm - configuration data for AlertGizmo classes
-  - AlertGizmo/Apod.pm - AlertGizmo monitor for NASA Astronomy Picture of the Day (APOD) feed
+  - AlertGizmo/Apod.pm - AlertGizmo monitor for NASA Astronomy Picture of the Day (APOD) feed (work in progress)
   - AlertGizmo/Neo.pm - AlertGizmo monitor for NASA JPL Near-Earth Object (NEO) close approach data
   - AlertGizmo/Swpc.pm - AlertGizmo monitor for NOAA Space Weather Prediction Center (SWPC) alerts, including aurora
 
