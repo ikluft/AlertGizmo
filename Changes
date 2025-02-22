@@ -15,5 +15,6 @@ Revision history for AlertGizmo
 
  [REVISION]
  - initial revision with pull-nasa-neo.pl & pull-swpc-alerts.pl scripts and AlertGizmo back-end
+ - create modules AlertGizmo::Neo, AlertGizmo::Swpc and AlertGizmo::Apod
 
  [SECURITY]
