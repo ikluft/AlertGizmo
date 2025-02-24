@@ -1,9 +1,11 @@
 AlertGizmo
 ----------
 
+by Ian Kluft
+
 AlertGizmo is a set of Perl modules which monitor for space-related events and generate summary pages. The Perl implementation may later be used as a prototype for other language implementations.
 
-It originated as scripts I wrote to monitor space-related alerts online. The common code among the scripts was pulled together into the AlertGizmo module. These can be run manually or from crontabs. (see example below)
+It originated as scripts I wrote to monitor space-related alerts online. The common code among the scripts was pulled together into the AlertGizmo module. These can be run manually, or automatically from crontabs. (see example below)
 
 ## Subclasses
 
@@ -45,7 +47,7 @@ This section will be filled in after AlertGizmo is uploaded to CPAN.
 
 The source code repository is at [https://github.com/ikluft/AlertGizmo](https://github.com/ikluft/AlertGizmo).
 
-For a development environment, make sure Perl is installed. Check first if binary packages are available for your OS & platform. More information can be found at [https://metacpan.org/dist/perl/view/INSTALL](https://metacpan.org/dist/perl/view/INSTALL).
+For a development environment, make sure Perl is installed. The minimum Perl version is 5.36 due to use of language features from 2024. Check first if binary packages are available for your OS & platform. More information can be found at [https://metacpan.org/dist/perl/view/INSTALL](https://metacpan.org/dist/perl/view/INSTALL).
 
 Then install App::cpanminus (cpanm), Dist::Zilla (dzil) and Perl::Critic (perlcritic).
 
