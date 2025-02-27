@@ -117,6 +117,13 @@ Then install the crontab by running:
 
     crontab my-crontab
 
+## Image generation
+
+Optionally, a tool such as wkhtmltoimage (part of wkhtmltopdf) and NetPBM tools can convert the HTML output to a PNG image file.
+
+    wkhtmltoimage --enable-local-file-access close-approaches.html - | djpeg | pnmcrop -white -closeness=5 | pamtopng > close-approaches.png
+    wkhtmltoimage --enable-local-file-access noaa-swpc-alerts.html - | djpeg | pnmcrop -white -closeness=5 | pamtopng > noaa-swpc-alerts.png
+
 ## Ongoing experimentation
 
 The SWPC alert script is derived from the NEO script. So they had common code. Before making more similar scripts, it was considered a good idea to make modules to combine their common features. That became AlertGizmo. Now the door is open to add more modules on that foundation.
