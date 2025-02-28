@@ -50,7 +50,7 @@ AlertGizmo::Config->accessor( ["paths"],   {} );
 # constants
 Readonly::Scalar our $PROGNAME => basename($0);
 Readonly::Array our @CLI_OPTIONS =>
-    ( "dir:s", "verbose", "test|test_mode", "proxy:s", "timezone|tz:s" );
+    ( "dir:s", "verbose", "test|test_mode", "proxy:s", "timezone|tz:s", "postproc:s" );
 Readonly::Scalar our $DEFAULT_OUTPUT_DIR => $FindBin::Bin;
 
 # return AlertGizmo (or subclass) version number
@@ -204,6 +204,16 @@ sub config_dir
     }
     $class->params( ["output_dir"], $dir );
     return $dir;
+}
+
+# accessor for post-processing configuration file path
+sub config_postproc
+{
+    my $class = shift;
+    if ( $class->has_config(qw(options postproc)) ) {
+        return $class->options( ["postproc"] );
+    }
+    return;
 }
 
 # class method to set the subclass it was called as to provide the implementation for this run
@@ -388,6 +398,11 @@ sub main_inner
     # subclass-specific processing for after template
     if ( $class->can("post_template") ) {
         $class->post_template();
+    }
+
+    # use configuration file for post-processing controls, if provided
+    if ( $class->config_postproc() ) {
+        # TODO
     }
 
     return;
