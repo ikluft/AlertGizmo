@@ -9,7 +9,7 @@ use Modern::Perl qw(2023);
 # includes strict & warnings, boolean requires 5.36, try/catch requires 5.34
 ## use critic (Modules::RequireExplicitPackage)
 
-package AlertGizmo::Swpc;
+package AlertGizmo::Apod;
 
 use parent "AlertGizmo";
 
