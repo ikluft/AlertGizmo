@@ -28,6 +28,7 @@ use DateTime;
 use DateTime::Format::Flexible;
 use Template;
 use results;
+use File::Which;
 use Data::Dumper;
 
 # exceptions/errors
@@ -52,6 +53,7 @@ Readonly::Scalar our $PROGNAME => basename($0);
 Readonly::Array our @CLI_OPTIONS =>
     ( "dir:s", "verbose", "test|test_mode", "proxy:s", "timezone|tz:s", "postproc:s" );
 Readonly::Scalar our $DEFAULT_OUTPUT_DIR => $FindBin::Bin;
+Readonly::Scalar our $WKHTMLTOIMAGE => which("wkhtmltoimage");
 
 # return AlertGizmo (or subclass) version number
 sub version
