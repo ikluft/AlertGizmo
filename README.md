@@ -117,19 +117,19 @@ Then install the crontab by running:
 
     crontab my-crontab
 
-## Image generation
-
-Optionally, a tool such as wkhtmltoimage (part of wkhtmltopdf) and NetPBM tools can convert the HTML output to a PNG image file.
-
-    wkhtmltoimage --enable-local-file-access close-approaches.html - | djpeg | pnmcrop -white -closeness=5 | pamtopng > close-approaches.png
-    wkhtmltoimage --enable-local-file-access noaa-swpc-alerts.html - | djpeg | pnmcrop -white -closeness=5 | pamtopng > noaa-swpc-alerts.png
-
 ## Ongoing experimentation
 
 The SWPC alert script is derived from the NEO script. So they had common code. Before making more similar scripts, it was considered a good idea to make modules to combine their common features. That became AlertGizmo. Now the door is open to add more modules on that foundation.
 
 An outage in Tom Taylor's Mastodon "Low Flying Rocks" bot led me to the conclusion I should expand these to be able to post on Mastodon. I was already inspired by [XKCD comic #2979 "Sky Alarm"](https://xkcd.com/2979/) to go in that direction.
 [![XKCD comic #2979 "Sky Alarm"](https://imgs.xkcd.com/comics/sky_alarm.png)](https://xkcd.com/2979/)
+
+### Image generation
+
+An intended upcoming feature is the ability to turn output from any AlertGizmo module into an image for display on social media or other postings. Even before it's added to AlertGizmo, it can be done with a tool such as wkhtmltoimage (part of wkhtmltopdf) and NetPBM tools can convert the HTML output to a PNG image file.
+
+    wkhtmltoimage --enable-local-file-access close-approaches.html - | djpeg | pnmcrop -white -closeness=5 | pamtopng > close-approaches.png
+    wkhtmltoimage --enable-local-file-access noaa-swpc-alerts.html - | djpeg | pnmcrop -white -closeness=5 | pamtopng > noaa-swpc-alerts.png
 
 ## Current development plans
 
