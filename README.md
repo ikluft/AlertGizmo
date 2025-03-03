@@ -131,6 +131,10 @@ An intended upcoming feature is the ability to turn output from any AlertGizmo m
     wkhtmltoimage --enable-local-file-access close-approaches.html - | djpeg | pnmcrop -white -closeness=5 | pamtopng > close-approaches.png
     wkhtmltoimage --enable-local-file-access noaa-swpc-alerts.html - | djpeg | pnmcrop -white -closeness=5 | pamtopng > noaa-swpc-alerts.png
 
+### Postprocessing scripts
+
+Current experimentation includes development of a postprocessing script to control image generation and posting to social media. The script will be specified by a --postproc=path parameter. But what needs to go in the script is to be determined.
+
 ## Current development plans
 
 Current plans include making a NASA APOD reader (in progress as Apod.pm), a table image generator as an alternative to HTML output, and a Mastodon client to post the images and summary text as periodic updates.
