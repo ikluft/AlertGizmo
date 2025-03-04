@@ -29,6 +29,7 @@ use DateTime::Format::Flexible;
 use Template;
 use results;
 use File::Which;
+use YAML qw(LoadFile);
 use Data::Dumper;
 
 # exceptions/errors
@@ -47,6 +48,7 @@ use Exception::Class (
 AlertGizmo::Config->accessor( ["options"], {} );
 AlertGizmo::Config->accessor( ["params"],  {} );
 AlertGizmo::Config->accessor( ["paths"],   {} );
+AlertGizmo::Config->accessor( ["postproc"],   {} );
 
 # constants
 Readonly::Scalar our $PROGNAME => basename($0);
@@ -208,13 +210,26 @@ sub config_dir
     return $dir;
 }
 
-# accessor for post-processing configuration file path
-sub config_postproc
+# load YAML data from post-processing configuration file path
+# returns 1 if postproc data was loaded, otherwise 0
+sub load_postproc
 {
     my $class = shift;
     if ( $class->has_config(qw(options postproc)) ) {
-        return $class->options( ["postproc"] );
+        my $postproc_path = $class->options( ["postproc"] );
+        my $postproc_yaml = LoadFile( $postproc_path );
+        $class->params( ["postproc"], $postproc_yaml );
+        return 1;
     }
+    return 0;
+}
+
+# perform postprocessing
+sub do_postproc
+{
+    my $class = shift;
+
+    # TODO
     return;
 }
 
@@ -403,8 +418,9 @@ sub main_inner
     }
 
     # use configuration file for post-processing controls, if provided
-    if ( $class->config_postproc() ) {
-        # TODO
+    if ( $class->load_postproc()) {
+        # if postproc data was loaded, process it
+        $class->do_postproc();
     }
 
     return;
