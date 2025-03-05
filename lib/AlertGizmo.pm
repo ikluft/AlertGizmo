@@ -17,7 +17,7 @@ use experimental qw(builtin try);
 use feature      qw(say try);
 use builtin      qw(true false);
 use Readonly;
-use Carp         qw(croak confess);
+use Carp         qw(carp croak confess);
 use Scalar::Util qw( blessed );
 use FindBin;
 use AlertGizmo::Config;
@@ -218,7 +218,7 @@ sub load_postproc
     if ( $class->has_config(qw(options postproc)) ) {
         my $postproc_path = $class->options( ["postproc"] );
         my $postproc_yaml = LoadFile( $postproc_path );
-        $class->params( ["postproc"], $postproc_yaml );
+        $class->params( ["postprox"], $postproc_yaml );
         return 1;
     }
     return 0;
@@ -228,6 +228,18 @@ sub load_postproc
 sub do_postproc
 {
     my $class = shift;
+
+    # load postprocessing instructions from first YAML doc
+    my $postprox_top_ref = $class->params( ["postprox"]);
+    if ( ref $postprox_top_ref ne "ARRAY" ) {
+        carp "invalid postprocessing structure: doc list expected, not an array ref";
+        return;
+    }
+    if ( ref $postprox_top_ref->[0] ne "ARRAY" ) {
+        carp "invalid postprocessing structure: instruction list expected, not an array ref";
+        return;
+    }
+    my @postprox = @{$postprox_top_ref->[0]};
 
     # TODO
     return;
