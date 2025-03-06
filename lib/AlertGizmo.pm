@@ -241,6 +241,20 @@ sub do_postproc
     }
     my @postprox = @{$postprox_top_ref->[0]};
 
+    # handle postprocessing instructions
+    foreach my $pp ( @postprox ) {
+        if ( ref $pp ne "HASH" ) {
+            carp "invalid postprocessing structure: entry is not a hashref";
+            next;
+        }
+        my %pp = %$pp;
+        if ( not exists $pp{type} ) {
+            carp "invalid postprocessing structure: entry hash does not contain a type key";
+            next;
+        }
+        # TODO
+    }
+
     # TODO
     return;
 }
