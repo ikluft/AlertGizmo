@@ -1,6 +1,6 @@
 # AlertGizmo
 # ABSTRACT: base class for AlertGizmo feed monitors
-# Copyright 2024 by Ian Kluft
+# Copyright 2024-2025 by Ian Kluft
 
 # pragmas to silence some warnings from Perl::Critic
 ## no critic (Modules::RequireExplicitPackage)
@@ -21,6 +21,7 @@ use Carp         qw(carp croak confess);
 use Scalar::Util qw( blessed );
 use FindBin;
 use AlertGizmo::Config;
+use AlertGizmo::Postproc;
 use File::Basename;
 use File::Fetch;
 use Getopt::Long;
@@ -29,7 +30,6 @@ use DateTime::Format::Flexible;
 use Template;
 use results;
 use File::Which;
-use YAML qw(LoadFile);
 use Data::Dumper;
 
 # exceptions/errors
@@ -41,6 +41,12 @@ use Exception::Class (
         alias       => 'throw_network_get',
         fields      => [ qw( client )],
         description => "Failed to access feed source",
+    },
+
+    'AlertGizmo::Exception::Postprox' => {
+        isa         => 'AlertGizmo::Exception',
+        alias       => 'throw_postprox',
+        description => "Postprocessing error",
     },
 );
 
@@ -208,55 +214,6 @@ sub config_dir
     }
     $class->params( ["output_dir"], $dir );
     return $dir;
-}
-
-# load YAML data from post-processing configuration file path
-# returns 1 if postproc data was loaded, otherwise 0
-sub load_postproc
-{
-    my $class = shift;
-    if ( $class->has_config(qw(options postproc)) ) {
-        my $postproc_path = $class->options( ["postproc"] );
-        my $postproc_yaml = LoadFile( $postproc_path );
-        $class->params( ["postprox"], $postproc_yaml );
-        return 1;
-    }
-    return 0;
-}
-
-# perform postprocessing
-sub do_postproc
-{
-    my $class = shift;
-
-    # load postprocessing instructions from first YAML doc
-    my $postprox_top_ref = $class->params( ["postprox"]);
-    if ( ref $postprox_top_ref ne "ARRAY" ) {
-        carp "invalid postprocessing structure: doc list expected, not an array ref";
-        return;
-    }
-    if ( ref $postprox_top_ref->[0] ne "ARRAY" ) {
-        carp "invalid postprocessing structure: instruction list expected, not an array ref";
-        return;
-    }
-    my @postprox = @{$postprox_top_ref->[0]};
-
-    # handle postprocessing instructions
-    foreach my $pp ( @postprox ) {
-        if ( ref $pp ne "HASH" ) {
-            carp "invalid postprocessing structure: entry is not a hashref";
-            next;
-        }
-        my %pp = %$pp;
-        if ( not exists $pp{type} ) {
-            carp "invalid postprocessing structure: entry hash does not contain a type key";
-            next;
-        }
-        # TODO
-    }
-
-    # TODO
-    return;
 }
 
 # class method to set the subclass it was called as to provide the implementation for this run
@@ -444,9 +401,9 @@ sub main_inner
     }
 
     # use configuration file for post-processing controls, if provided
-    if ( $class->load_postproc()) {
+    if ( AlertGizmo::Postproc->load()) {
         # if postproc data was loaded, process it
-        $class->do_postproc();
+        AlertGizmo::Postproc->run();
     }
 
     return;
