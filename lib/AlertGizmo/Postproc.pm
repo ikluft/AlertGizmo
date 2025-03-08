@@ -16,6 +16,7 @@ use experimental qw(builtin try);
 use feature      qw(say try);
 use builtin      qw(true false);
 use Carp         qw(carp croak confess);
+use Module::Load;
 use AlertGizmo; # should always already be loaded because it calls us
 use YAML qw(LoadFile);
 
@@ -58,6 +59,12 @@ sub run
             carp "invalid postprocessing structure: entry hash does not contain a class key";
             next;
         }
+        Module::Load::autoload( $pp{class} );
+        if ( not $pp{class}->isa( __PACKAGE__ ) ) {
+            carp "invalid postprocessing structure: entry class ".$pp{class}." is not a subclass of ".__PACKAGE__;
+            next;
+        }
+
         # TODO
     }
 
