@@ -22,7 +22,7 @@ use YAML qw(LoadFile);
 
 # load YAML data from post-processing configuration file path
 # returns 1 if postproc data was loaded, otherwise 0
-sub load
+sub load_prox
 {
     if ( AlertGizmo->has_config(qw(options postproc)) ) {
         my $postproc_path = AlertGizmo->options( ["postproc"] );
@@ -34,7 +34,7 @@ sub load
 }
 
 # perform postprocessing
-sub run
+sub run_prox
 {
     # load postprocessing instructions from first YAML doc
     my $postprox_top_ref = AlertGizmo->params( ["postprox"]);
@@ -59,13 +59,19 @@ sub run
             carp "invalid postprocessing structure: entry hash does not contain a class key";
             next;
         }
+
+        # load specified class and instantiate an object from it
         Module::Load::autoload( $pp{class} );
         if ( not $pp{class}->isa( __PACKAGE__ ) ) {
             carp "invalid postprocessing structure: entry class ".$pp{class}." is not a subclass of ".__PACKAGE__;
             next;
         }
-
-        # TODO
+        my $prox_obj = $pp{class}->new( $pp );
+        if ( not $prox_obj->can( "run" )) {
+            carp "invalid postprocessing structure: entry class ".$pp{class}." does not implement a run() method";
+            next;
+        }
+        $prox_obj->run();
     }
 
     # TODO

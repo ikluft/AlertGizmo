@@ -401,9 +401,9 @@ sub main_inner
     }
 
     # use configuration file for post-processing controls, if provided
-    if ( AlertGizmo::Postproc->load()) {
+    if ( AlertGizmo::Postproc->load_prox()) {
         # if postproc data was loaded, process it
-        AlertGizmo::Postproc->run();
+        AlertGizmo::Postproc->run_prox();
     }
 
     return;
