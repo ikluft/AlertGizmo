@@ -95,7 +95,7 @@ sub run_prox
 
 =head1 DESCRIPTION
 
-=head1 INSTALLATION
+AlertGizmo::Postproc is the parent class, API and common code base for classes which provide postprocessing for AlertGizmo modules. Among possible postprocessing functions, it could include generation of an image from the alert content and posting it online.
 
 =head1 FUNCTIONS AND METHODS
 
@@ -105,6 +105,8 @@ I<AlertGizmo> and its submodules are Open Source software licensed under the GNU
 See L<https://www.gnu.org/licenses/gpl-3.0-standalone.html>.
 
 =head1 SEE ALSO
+
+L<AlertGizmo>
 
 =head1 BUGS AND LIMITATIONS
 
