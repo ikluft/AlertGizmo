@@ -36,6 +36,8 @@ sub load_prox
 # perform postprocessing
 sub run_prox
 {
+    my @run_status;
+
     # load postprocessing instructions from first YAML doc
     my $postprox_top_ref = AlertGizmo->params( ["postprox"]);
     if ( ref $postprox_top_ref ne "ARRAY" ) {
@@ -71,11 +73,12 @@ sub run_prox
             carp "invalid postprocessing structure: entry class ".$pp{class}." does not implement a run() method";
             next;
         }
-        $prox_obj->run();
+        my @item_status = $prox_obj->run();
+        push @run_status, \@item_status;
     }
 
-    # TODO
-    return;
+    # return list of results of all postprocessing functions
+    return @run_status;
 }
 
 1;
