@@ -20,6 +20,21 @@ use Module::Load;
 use AlertGizmo; # should always already be loaded because it calls us
 use YAML qw(LoadFile);
 
+# instantiate new object
+# required parameter: hash ref with postprocessing parameters
+sub new
+{
+    my ( $class, $pp_ref ) = @_;
+    if ( ref $pp_ref ne "HASH" ) {
+        my $type = ( ref $pp_ref ) ? "".( ref $pp_ref )." ref" : "scalar";
+        confess "AlertGizmo::Postproc::new() as $class: expected hashref, got $type";
+    }
+    my $self = $pp_ref;
+    bless $self, $class;
+
+    return $self;
+}
+
 # load YAML data from post-processing configuration file path
 # returns 1 if postproc data was loaded, otherwise 0
 sub load_prox
