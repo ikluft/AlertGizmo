@@ -1,5 +1,5 @@
 # AlertGizmo::Postproc::Image
-# ABSTRACT: generate images from AlertGizmo data
+# ABSTRACT: postprocessing plugin to generate images from AlertGizmo data
 # Copyright (c) 2025 by Ian Kluft
 
 # pragmas to silence some warnings from Perl::Critic

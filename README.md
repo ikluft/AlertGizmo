@@ -36,6 +36,8 @@ The subclasses of AlertGizmo which handle the details of specific topics of spac
   - AlertGizmo/Apod.pm - AlertGizmo monitor for NASA Astronomy Picture of the Day (APOD) feed (work in progress)
   - AlertGizmo/Neo.pm - AlertGizmo monitor for NASA JPL Near-Earth Object (NEO) close approach data
   - AlertGizmo/Swpc.pm - AlertGizmo monitor for NOAA Space Weather Prediction Center (SWPC) alerts, including aurora
+  - AlertGizmo/Postproc.pm - common code for for AlertGizmo postprocessing classes
+  - AlertGizmo/Postproc/Image.pm - postprocessing plugin to generate images from AlertGizmo data
 
 ## Installation
 
