@@ -385,12 +385,14 @@ sub main_inner
         EVAL_PERL    => 0,                      # evaluate Perl code blocks
     };
     my $template = Template->new($config);
+    my $gen_path_output = $class->config_dir() . "/" . $class->path_output();
     $template->process(
         $class->path_template(),
         $class->params(),
-        $class->config_dir() . "/" . $class->path_output(),
+        $gen_path_output,
         binmode => ':utf8'
     ) or croak "template processing error: " . $template->error();
+    $class->params( [qw( gen_path_output )], $gen_path_output );
 
     # in test mode, exit before messing with symlink or removing old files
     $class->test_dump();
