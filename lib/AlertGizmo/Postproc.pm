@@ -107,8 +107,8 @@ sub run_prox
     use AlertGizmo::Postproc;
 
     # this is how AlertGizmo calls AlertGizmo::Postproc
-    if ( AlertGizmo::Postproc->load()) {
-        AlertGizmo::Postproc->run();
+    if ( AlertGizmo::Postproc->load_prox()) {
+        AlertGizmo::Postproc->run_prox();
     }
 
 =head1 DESCRIPTION
