@@ -357,6 +357,32 @@ sub retrieve_url
     return;
 }
 
+# log generated files for use by postprocessing
+sub log_generated_file
+{
+    my ( $class, %attr ) = @_;
+    my %missing;
+    foreach my $fname ( qw( path filetype ) ) {
+        if ( not exists $attr{$fname}) {
+            $missing{$fname} = 1;
+        }
+    }
+    if ( %missing ) {
+        croak "$class: missing params in log_generated_name() call: ".join( " ", sort keys %missing );
+    }
+
+    # make sure log array exists
+    if ( not $class->has_config( "generated_files" )) {
+        $class->$class->config( [ "generated_files" ], [] );
+    }
+
+    # add the new log entry
+    my $genfiles_ref = $class->config( [ "generated_files" ] );
+    my @log_entry = ( $class, $attr{ path }, $attr{ filetype } );
+    push @$genfiles_ref, \@log_entry;
+    return;
+}
+
 # inner mainline called from main() exception-catching wrapper
 sub main_inner
 {
@@ -392,7 +418,7 @@ sub main_inner
         $gen_path_output,
         binmode => ':utf8'
     ) or croak "template processing error: " . $template->error();
-    $class->params( [qw( gen_path_output )], $gen_path_output );
+    $class->log_generated_file( "path" => $gen_path_output, "filetype" => "html" );
 
     # in test mode, exit before messing with symlink or removing old files
     $class->test_dump();
