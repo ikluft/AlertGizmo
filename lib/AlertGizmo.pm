@@ -383,6 +383,34 @@ sub log_generated_file
     return;
 }
 
+# get list of generated files, optionally filtered by content type or origin class
+sub query_generated_file
+{
+    my ( $class, %attr ) = @_;
+    my $q_class = $attr{class};
+    my $q_type = $attr{type};
+
+    # short-circuit results if no query parameters and just return everything
+    my $genfiles_ref = $class->config( [ "generated_files" ] );
+    if ( not defined $q_class and not defined $q_type ) {
+        return @$genfiles_ref;
+    }
+
+    # scan for queried entries
+    my @result;
+    foreach my $entry ( @$genfiles_ref ) {
+        if ( defined $q_class and $q_class eq $entry->[0]) {
+            push @result, $entry;
+            next;
+        }
+        if ( defined $q_type and $q_type eq $entry->[2]) {
+            push @result, $entry;
+            next;
+        }
+    }
+    return @result;
+}
+
 # inner mainline called from main() exception-catching wrapper
 sub main_inner
 {
