@@ -18,13 +18,21 @@ use experimental qw(builtin try);
 use feature      qw(say try);
 use builtin      qw(true false);
 use Carp         qw(carp croak confess);
+use Readonly;
+use IPC::Run;
+
+# constants
+Readonly::Array my @WKHTMLTOIMAGE_CMD => ( "wkhtmltoimage", "--enable-local-file-access", "--format=png" );
 
 # render an image from a single HTML file
 sub html2image
 {
     my ( $self, $f_class, $f_path, $f_type ) = @_;
 
-    # TODO
+    # use IPC::Run to run the command, avoiding launching a shell
+    IPC::Run::run [ @WKHTMLTOIMAGE_CMD, $f_path ]
+        or croak "wkhtmltoimage failed: returned $?";
+    return;
 }
 
 # generate image(s) during postprocessing for AlertGizmo
@@ -76,4 +84,3 @@ Please report bugs via GitHub at L<https://github.com/ikluft/AlertGizmo/issues>
 Patches and enhancements may be submitted via a pull request at L<https://github.com/ikluft/AlertGizmo/pulls>
 
 =cut
-
