@@ -17,7 +17,6 @@ use feature      qw(say try);
 use builtin      qw(true false);
 use Carp         qw(carp croak confess);
 use Module::Load;
-use AlertGizmo; # should always already be loaded because it calls us
 use YAML qw(LoadFile);
 
 # instantiate new object
