@@ -41,8 +41,8 @@ sub load_prox
 {
     if ( AlertGizmo->has_config(qw(options postproc)) ) {
         my $postproc_path = AlertGizmo->options( ["postproc"] );
-        my $postproc_yaml = LoadFile( $postproc_path );
-        AlertGizmo->params( ["postprox"], $postproc_yaml );
+        my @postproc_yaml = LoadFile( $postproc_path );
+        AlertGizmo->params( ["postprox"], \@postproc_yaml );
         return 1;
     }
     return 0;
@@ -55,12 +55,14 @@ sub run_prox
 
     # load postprocessing instructions from first YAML doc
     my $postprox_top_ref = AlertGizmo->params( ["postprox"]);
-    if ( ref $postprox_top_ref ne "ARRAY" ) {
-        carp "invalid postprocessing structure: doc list expected, not an array ref";
+    my $reftype = ( ref $postprox_top_ref ) ? ref $postprox_top_ref : "non-ref scalar";
+    if ( $reftype ne "ARRAY" ) {
+        carp "invalid postprocessing structure: doc list expected, not $reftype";
         return;
     }
-    if ( ref $postprox_top_ref->[0] ne "ARRAY" ) {
-        carp "invalid postprocessing structure: instruction list expected, not an array ref";
+    my $doctype = ( ref $postprox_top_ref->[0] ) ? ( ref $postprox_top_ref->[0] ) : "non-ref scalar";
+    if ( $doctype ne "ARRAY" ) {
+        carp "invalid postprocessing structure: instruction list expected, not $doctype";
         return;
     }
     my @postprox = @{$postprox_top_ref->[0]};
