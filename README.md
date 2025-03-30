@@ -7,13 +7,19 @@ AlertGizmo is a set of Perl modules which monitor for space-related events and g
 
 It originated as scripts I wrote to monitor space-related alerts online. The common code among the scripts was pulled together into the AlertGizmo module. These can be run manually, or automatically from crontabs. (see example below)
 
-## Subclasses
+## Classes
 
 The subclasses of AlertGizmo which handle the details of specific topics of space alert data are as follows:
 
-* AlertGizmo::Apod: monitor for NASA Astronomy Picture of the Day (APOD) feed (work in progress)
-* AlertGizmo::Neo: monitor for NASA JPL Near-Earth Object (NEO) close approach data
-* AlertGizmo::Swpc: monitor for NOAA Space Weather Prediction Center (SWPC) alerts, including aurora
+* AlertGizmo::Apod - monitor for NASA Astronomy Picture of the Day (APOD) feed (work in progress)
+* AlertGizmo::Neo - monitor for NASA JPL Near-Earth Object (NEO) close approach data
+* AlertGizmo::Swpc - monitor for NOAA Space Weather Prediction Center (SWPC) alerts, including aurora
+
+Other classes in the distribution include the following:
+
+* AlertGizmo::Config - configuration data for AlertGizmo classes
+* AlertGizmo::Postproc - common code for for AlertGizmo postprocessing classes
+* AlertGizmo::Postproc::Image - postprocessing plugin to generate images from AlertGizmo data
 
 ## Directory structure
 
