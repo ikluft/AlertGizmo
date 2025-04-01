@@ -28,9 +28,16 @@ Readonly::Array my @WKHTMLTOIMAGE_CMD => ( "wkhtmltoimage", "--enable-local-file
 sub html2image
 {
     my ( $self, $f_class, $f_path, $f_type ) = @_;
+    my $class = ref $self;
+
+    # derive output file name
+    my $out_image = $f_path.".png";
+    if ( AlertGizmo->config_test_mode() or AlertGizmo::Config->verbose() ) {
+        say STDERR "test mode: $class html2image() params=" . Dumper( AlertGizmo->params() );
+    }
 
     # use IPC::Run to run the command, avoiding launching a shell
-    IPC::Run::run [ @WKHTMLTOIMAGE_CMD, $f_path ]
+    IPC::Run::run [ @WKHTMLTOIMAGE_CMD, $f_path ], '>', $out_image
         or croak "wkhtmltoimage failed: returned $?";
     return;
 }
