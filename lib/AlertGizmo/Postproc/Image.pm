@@ -32,7 +32,7 @@ sub html2image
 
     # derive output file name
     my $out_image = $f_path.".png";
-    if ( AlertGizmo->config_test_mode() or AlertGizmo::Config->verbose() ) {
+    if ( $self->is_verbose() ) {
         say STDERR "test mode: $class html2image() params=" . Dumper( AlertGizmo->params() );
     }
 

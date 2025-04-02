@@ -34,6 +34,12 @@ sub new
     return $self;
 }
 
+# check if verbose or testing modes are on
+sub is_verbose
+{
+    return ( AlertGizmo->config_test_mode() or AlertGizmo::Config->verbose() );
+}
+
 # load YAML data from post-processing configuration file path
 # returns 1 if postproc data was loaded, otherwise 0
 sub load_prox
