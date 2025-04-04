@@ -18,6 +18,7 @@ use builtin      qw(true false);
 use Carp         qw(carp croak confess);
 use Module::Load;
 use YAML qw(LoadFile);
+use Data::Dumper;
 
 # instantiate new object
 # required parameter: hash ref with postprocessing parameters
@@ -28,6 +29,7 @@ sub new
         my $type = ( ref $pp_ref ) ? "".( ref $pp_ref )." ref" : "scalar";
         confess "AlertGizmo::Postproc::new() as $class: expected hashref, got $type";
     }
+    AlertGizmo::Config->verbose() and say STDERR "AlertGizmo::Postproc::new(): $class ".Dumper( $pp_ref );
     my $self = $pp_ref;
     bless $self, $class;
 
@@ -91,6 +93,7 @@ sub run_prox
             next;
         }
         my $prox_obj = $pp{class}->new( $pp );
+        AlertGizmo::Config->verbose() and say STDERR "AlertGizmo::Postproc::run(): ".$pp{class};
         if ( not $prox_obj->can( "run" )) {
             carp "invalid postprocessing structure: entry class ".$pp{class}." does not implement a run() method";
             next;
