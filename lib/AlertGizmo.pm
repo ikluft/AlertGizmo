@@ -103,7 +103,10 @@ sub config
     }
 
     # returns on success
-    return $result->unwrap();
+    my $resval = $result->unwrap();
+    AlertGizmo::Config->verbose() and say STDERR "config: result value "
+        . ( ref $resval ? Dumper( $resval ) : $resval // "" );
+    return $resval;
 }
 
 # wrapper for AlertGizmo::Config existence-test method
