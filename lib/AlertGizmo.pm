@@ -89,11 +89,11 @@ sub config
         return AlertGizmo::Config->accessor()->unwrap();
     }
     my $result = AlertGizmo::Config->accessor( $keys_ref, $value );
-    AlertGizmo::Config->verbose() and say STDERR "config: " . ( join( "-", @$keys_ref )) . " result type "
-        . ref($result);
+    my $keys_str = join( "-", @$keys_ref );
+    AlertGizmo::Config->verbose() and say STDERR "config: $keys_str result type " . ref($result);
     if ( $result->is_err() ) {
         my $err = $result->unwrap_err();
-        AlertGizmo::Config->verbose() and say STDERR "config: result err " . ref($err);
+        AlertGizmo::Config->verbose() and say STDERR "config: $keys_str result err " . ref($err);
         if ( $err->isa('AlertGizmo::Config::Exception::NotFound') ) {
 
             # process not found error into undef result as common Perl code expects
@@ -104,8 +104,8 @@ sub config
 
     # returns on success
     my $resval = $result->unwrap();
-    AlertGizmo::Config->verbose() and say STDERR "config: result value "
-        . ( ref $resval ? Dumper( $resval ) : $resval // "" );
+    AlertGizmo::Config->verbose() and say STDERR "config: $keys_str result value => "
+        . ( ref $resval ? Dumper( $resval ) : $resval // "[undef]" );
     return $resval;
 }
 
