@@ -371,8 +371,10 @@ sub log_generated_file
         }
     }
     if ( %missing ) {
-        croak "$class: missing params in log_generated_name() call: ".join( " ", sort keys %missing );
+        croak "$class: missing params in log_generated_file() call: ".join( " ", sort keys %missing );
     }
+    AlertGizmo::Config->verbose() and say STDERR $class . "->log_generated_file( " .
+        join( ", ", map { $_ . "=>" . $attr{$_} } keys %attr ) . ")\n";
 
     # make sure log array exists
     if ( not $class->has_config( "generated_files" )) {
@@ -464,6 +466,9 @@ sub main_inner
         # if postproc data was loaded, process it
         AlertGizmo::Postproc->run_prox();
     }
+
+    # config dump for verbose mode
+    AlertGizmo::Config->verbose() and say STDERR "config dump: " . Dumper( $class->config() );
 
     return;
 }
