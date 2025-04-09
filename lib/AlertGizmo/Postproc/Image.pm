@@ -20,6 +20,7 @@ use builtin      qw(true false);
 use Carp         qw(carp croak confess);
 use Readonly;
 use IPC::Run;
+use Data::Dumper;
 
 # constants
 Readonly::Array my @WKHTMLTOIMAGE_CMD => ( "wkhtmltoimage", "--enable-local-file-access", "--format=png" );
