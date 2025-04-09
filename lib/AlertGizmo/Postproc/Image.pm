@@ -23,7 +23,10 @@ use IPC::Run;
 use Data::Dumper;
 
 # constants
-Readonly::Array my @WKHTMLTOIMAGE_CMD => ( "wkhtmltoimage", "--enable-local-file-access", "--format=png" );
+Readonly::Array my @WKHTMLTOIMAGE_CMD => ( "wkhtmltoimage", "--enable-local-file-access", "--format", "png" );
+Readonly::Array my @PNGTOPNM_CMD      => ( "pngtopnm" );
+Readonly::Array my @IMG_CROP_CMD      => ( "pnmcrop", "-white" );
+Readonly::Array my @PNMTOPNG_CMD      => ( "pnmtopng", "-compression=9" );
 
 # render an image from a single HTML file
 sub html2image
@@ -38,7 +41,8 @@ sub html2image
     }
 
     # use IPC::Run to run the command, avoiding launching a shell
-    IPC::Run::run [ @WKHTMLTOIMAGE_CMD, $f_path ], '>', $out_image
+    IPC::Run::run ( [ @WKHTMLTOIMAGE_CMD, $f_path, "-" ], '|', \@PNGTOPNM_CMD, '|', \@IMG_CROP_CMD,
+        '|', \@PNMTOPNG_CMD, '>', $out_image )
         or croak "wkhtmltoimage failed: returned $?";
     return;
 }
