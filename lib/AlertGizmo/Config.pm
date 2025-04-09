@@ -181,7 +181,7 @@ sub contains
     my $instance   = _class_or_obj($class_or_obj);
     my $hoh_result = $instance->_get_hoh_path(@keys);
     if ( $hoh_result->is_err() ) {
-        __PACKAGE__->verbose() and say STDERR "contains( " . join( " ", @keys ) . " ) -> not found";
+        __PACKAGE__->verbose() and say STDERR "Config::contains( " . join( " ", @keys ) . " ) -> not found";
         $hoh_result->unwrap_err();    # touch error to satisfy results it wasn't ignored
         return false;
     }
@@ -199,7 +199,7 @@ sub read_accessor : Result
     my $hoh_result = $instance->_get_hoh_path(@keys);
     if ( $hoh_result->is_err() ) {
         __PACKAGE__->verbose()
-            and say STDERR "read_accessor( " . join( " ", @keys ) . " ) -> " . $hoh_result;
+            and say STDERR "Config::read_accessor( " . join( " ", @keys ) . " ) -> " . $hoh_result;
         return $hoh_result;
     }
     my $value = $hoh_result->unwrap();
