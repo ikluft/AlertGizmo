@@ -203,10 +203,10 @@ sub read_accessor : Result
         return $hoh_result;
     }
     my $value = $hoh_result->unwrap();
-    if ( ref $value eq "SCALAR" ) {
-        return ok($$value);
-    }
-    return ok($value);
+    my $retval = ( ref $value eq "SCALAR" ) ? $$value : $value;
+    __PACKAGE__->verbose()
+        and say STDERR "Config::read_accessor( " . join( " ", @keys ) . " ) -> ok(" . ( $retval // "undef" ) . ")";
+    return ok($retval);
 }
 
 # configuration write accessor
@@ -220,10 +220,14 @@ sub write_accessor : Result
     my $last_key   = pop @keys;
     my $hoh_result = $instance->_mk_hoh_path(@keys);
     if ( $hoh_result->is_err() ) {
+        __PACKAGE__->verbose()
+            and say STDERR "Config::write_accessor( " . join( " ", @keys ) . ", $value ) -> " . $hoh_result;
         return $hoh_result;
     }
     my $node = $hoh_result->unwrap();
     $node->{$last_key} = $value;
+    __PACKAGE__->verbose()
+        and say STDERR "Config::write_accessor( " . join( " ", @keys ) . ", ". ( $value // "undef" ) . " ) -> ok";
     return if not defined wantarray;    # return value prohibited in void context
     return ok();
 }
