@@ -378,13 +378,14 @@ sub log_generated_file
 
     # make sure log array exists
     if ( not $class->has_config( "generated_files" )) {
-        $class->$class->config( [ "generated_files" ], [] );
+        $class->config( [ "generated_files" ], [] );
     }
 
     # add the new log entry
     my $genfiles_ref = $class->config( [ "generated_files" ] );
     my @log_entry = ( $class, $attr{ path }, $attr{ filetype } );
     push @$genfiles_ref, \@log_entry;
+    $class->config( [ "generated_files" ], $genfiles_ref );
     return;
 }
 
