@@ -26,8 +26,8 @@ use File::Basename;
 # constants
 Readonly::Scalar my $APOD_RSS_URL => "https://apod.nasa.gov/apod.rss";
 Readonly::Scalar my $RSS_XSL_STYLESHEET => "rss.xsl";
-Readonly::Scalar my $TEMPLATE      => "apod-alerts.tt";
-Readonly::Scalar my $OUTHTML       => "apod-alerts.html";
+Readonly::Scalar my $OUTBASE       => "apod-alerts";
+Readonly::Scalar my $TEMPLATE      => $OUTBASE . ".tt";
 
 # get APoD feed and save result in named file
 sub read_apod_feed
@@ -44,11 +44,11 @@ sub path_template
     return $TEMPLATE;
 }
 
-# get output file path for this subclass
+# get output file path base for this subclass
 # class method
-sub path_output
+sub path_out_base
 {
-    return $OUTHTML;
+    return $OUTBASE;
 }
 
 # class method AlertGizmo (parent) calls before template processing

@@ -39,8 +39,8 @@ AlertGizmo::Config->accessor( ["msgid"], {} );
 Readonly::Scalar my $SWPC_JSON_URL => "https://services.swpc.noaa.gov/products/alerts.json";
 Readonly::Scalar my $OUTDIR        => $FindBin::Bin;
 Readonly::Scalar my $OUTJSON       => "swpc-data.json";
-Readonly::Scalar my $TEMPLATE      => "noaa-swpc-alerts.tt";
-Readonly::Scalar my $OUTHTML       => "noaa-swpc-alerts.html";
+Readonly::Scalar my $OUTBASE       => "noaa-swpc-alerts";
+Readonly::Scalar my $TEMPLATE      => $OUTBASE . ".tt";
 Readonly::Scalar my $S_NONE        => "none";
 Readonly::Scalar my $S_ACTIVE      => "active";
 Readonly::Scalar my $S_INACTIVE    => "inactive";
@@ -83,11 +83,11 @@ sub path_template
     return $TEMPLATE;
 }
 
-# get output file path for this subclass
+# get output file path base for this subclass
 # class method
-sub path_output
+sub path_out_base
 {
-    return $OUTHTML;
+    return $OUTBASE;
 }
 
 # convert date string to DateTime object

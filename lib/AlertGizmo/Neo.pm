@@ -35,8 +35,8 @@ Readonly::Scalar my $NEO_API_URL =>
     "https://ssd-api.jpl.nasa.gov/cad.api?dist-max=2LD&sort=-date&diameter=true&date-min=%s";
 Readonly::Scalar my $NEO_LINK_URL => "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=";
 Readonly::Scalar my $OUTJSON      => "neo-data.json";
-Readonly::Scalar my $TEMPLATE     => "close-approaches.tt";
-Readonly::Scalar my $OUTHTML      => "close-approaches.html";
+Readonly::Scalar my $OUTBASE      => "close-approaches";
+Readonly::Scalar my $TEMPLATE     => $OUTBASE . ".tt";
 Readonly::Scalar my $E_RADIUS     => 6378;
 Readonly::Scalar my $KM_IN_AU     => 1.4959787e+08;
 Readonly::Scalar my $UC_QMARK     => "\N{fullwidth question mark}";    # Unicode question mark
@@ -50,11 +50,11 @@ sub path_template
     return $TEMPLATE;
 }
 
-# get output file path for this subclass
+# get output file path base for this subclass
 # class method
-sub path_output
+sub path_out_base
 {
-    return $OUTHTML;
+    return $OUTBASE;
 }
 
 # internal computation for bgcolor for each table, called by dist2bgcolor()

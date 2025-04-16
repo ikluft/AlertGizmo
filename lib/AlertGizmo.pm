@@ -30,6 +30,7 @@ use DateTime::Format::Flexible;
 use Template;
 use results;
 use File::Which;
+use YAML qw(DumpFile);
 use Data::Dumper;
 
 # exceptions/errors
@@ -62,6 +63,8 @@ Readonly::Array our @CLI_OPTIONS =>
     ( "dir:s", "verbose", "test|test_mode", "proxy:s", "timezone|tz:s", "postproc:s" );
 Readonly::Scalar our $DEFAULT_OUTPUT_DIR => $FindBin::Bin;
 Readonly::Scalar our $WKHTMLTOIMAGE => which("wkhtmltoimage");
+Readonly::Scalar our $SUFFIX_HTML => ".html";
+Readonly::Scalar our $SUFFIX_YAML => ".yaml";
 
 # return AlertGizmo (or subclass) version number
 sub version
@@ -445,14 +448,20 @@ sub main_inner
         EVAL_PERL    => 0,                      # evaluate Perl code blocks
     };
     my $template = Template->new($config);
-    my $gen_path_output = $class->config_dir() . "/" . $class->path_output();
+    my $path_out_base = $class->path_out_base();
+    my $gen_path_out_html = $class->config_dir() . "/" . $path_out_base . $SUFFIX_HTML;
     $template->process(
         $class->path_template(),
         $class->params(),
-        $gen_path_output,
+        $gen_path_out_html,
         binmode => ':utf8'
     ) or croak "template processing error: " . $template->error();
-    $class->log_generated_file( "path" => $gen_path_output, "filetype" => "html" );
+    $class->log_generated_file( "path" => $gen_path_out_html, "filetype" => "html" );
+
+    # generate a YAML copy of the same params made available to the templater, for formatting by other software
+    my $gen_path_out_yaml = $class->config_dir() . "/" . $path_out_base . $SUFFIX_YAML;
+    DumpFile($gen_path_out_yaml, $class->params());
+    $class->log_generated_file( "path" => $gen_path_out_yaml, "filetype" => "yaml" );
 
     # in test mode, exit before messing with symlink or removing old files
     $class->test_dump();
