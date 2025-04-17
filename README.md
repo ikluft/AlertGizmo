@@ -10,5 +10,10 @@ It started with a [Perl implementation](src/perl) to be used as a prototype for 
 
 ## To Do
 
-Make a github.io site which displays the data processed by AlertGizmo modules.
+Make a github.io site which displays regularly-updated data fetched and processed by AlertGizmo modules.
 
+### Examples
+
+![Example of AlertGizmo::Neo output for NASA JPL near Earth object pass data](images/Screenshot-AlertGizmo-Neo-example.png)
+
+![Example of AlertGizmo::Swpc output for NOAA Space Weather Prediction Center aurora data](images/Screenshot-AlertGizmo-Swpc-example.png)
