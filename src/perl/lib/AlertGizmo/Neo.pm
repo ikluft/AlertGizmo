@@ -44,17 +44,38 @@ Readonly::Scalar my $UC_NDASH     => "\N{en dash}";                    # Unicode
 Readonly::Scalar my $UC_PLMIN     => "\N{plus minus sign}";            # Unicode plus-minus sign
 
 # get template path for this subclass
-# class method
+# class method, required of AlertGizmo subclasses
 sub path_template
 {
     return $TEMPLATE;
 }
 
 # get output file path base for this subclass
-# class method
+# class method, required of AlertGizmo subclasses
 sub path_out_base
 {
     return $OUTBASE;
+}
+
+# return description link url & text to display in table footer
+# class method, required of AlertGizmo subclasses
+sub footer_desc
+{
+    return ( "https://ssd-api.jpl.nasa.gov/doc/cad.html", "NASA JPL NEO approaches" );
+}
+
+# return script link url & text to display in table footer
+# class method, required of AlertGizmo subclasses
+sub footer_script
+{
+    return ( "https://github.com/ikluft/AlertGizmo/tree/main/src/perl", "pull-nasa-neo" );
+}
+
+# return author link url & text to display in table footer
+# class method, required of AlertGizmo subclasses
+sub footer_author
+{
+    return ( "https://ikluft.github.io/", "Ian Kluft" );
 }
 
 # internal computation for bgcolor for each table, called by dist2bgcolor()

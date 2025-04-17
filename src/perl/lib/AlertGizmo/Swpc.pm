@@ -77,17 +77,38 @@ Readonly::Array my @LEVEL_COLORS =>
     ( "#bbb", "#F6EB14", "#FFC800", "#FF9600", "#FF0000", "#C80000" );    # NOAA scales
 
 # get template path for this subclass
-# class method
+# class method, required of AlertGizmo subclasses
 sub path_template
 {
     return $TEMPLATE;
 }
 
 # get output file path base for this subclass
-# class method
+# class method, required of AlertGizmo subclasses
 sub path_out_base
 {
     return $OUTBASE;
+}
+
+# return description link url & text to display in table footer
+# class method, required of AlertGizmo subclasses
+sub footer_desc
+{
+    return ( "https://services.swpc.noaa.gov/products/alerts.json", "NOAA SWPC data" );
+}
+
+# return script link url & text to display in table footer
+# class method, required of AlertGizmo subclasses
+sub footer_script
+{
+    return ( "https://github.com/ikluft/AlertGizmo/tree/main/src/perl", "pull-swpc-alerts" );
+}
+
+# return author link url & text to display in table footer
+# class method, required of AlertGizmo subclasses
+sub footer_author
+{
+    return ( "https://ikluft.github.io/", "Ian Kluft" );
 }
 
 # convert date string to DateTime object

@@ -49,6 +49,12 @@ use Exception::Class (
         alias       => 'throw_postprox',
         description => "Postprocessing error",
     },
+
+    'AlertGizmo::Exception::NotImplemented' => {
+        isa         => 'AlertGizmo::Exception',
+        alias       => 'throw_not_implemented',
+        description => "Not implemented error: method must be provided by subclass",
+    }
 );
 
 # initialize class static variables
@@ -79,6 +85,24 @@ sub version
     }
     return "00-dev";
 }
+
+#
+# methods which must be provided by subclasses
+#
+
+## no critic (RequireFinalReturn)
+sub not_implemented
+{
+    my $funcname = shift;
+    throw_not_implemented( "$funcname() method must be provided by subclass" );
+}
+
+sub path_template { not_implemented( "path_template" ); }
+sub path_out_base { not_implemented( "path_out_base" ); }
+sub footer_desc   { not_implemented( "footer_desc" ); }
+sub footer_script { not_implemented( "footer_script" ); }
+sub footer_author { not_implemented( "footer_author" ); }
+## critic (RequireFinalReturn)
 
 #
 # Configuration wrapper functions for AlertGizmo::Config
