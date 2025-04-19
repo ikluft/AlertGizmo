@@ -444,6 +444,26 @@ sub query_generated_file
     return @result;
 }
 
+# initialize basic parameters including timestamp and footer info
+sub _init_params
+{
+    my ( $class, %attr ) = @_;
+
+    # save timestamp
+    $class->params( [qw( timestamp )], dt2dttz( $class->config_timestamp() ) );
+
+    # save footer info
+    # each array here is a pair of link url & text
+    my @desc   = $class->footer_desc();
+    my @script = $class->footer_script();
+    my @author = $class->footer_author();
+    $class->params( [qw( footer )], {} );
+    $class->params( [qw( footer desc )], \@desc );
+    $class->params( [qw( footer script )], \@script );
+    $class->params( [qw( footer author )], \@author );
+    return;
+}
+
 # inner mainline called from main() exception-catching wrapper
 sub main_inner
 {
@@ -456,8 +476,8 @@ sub main_inner
     }
     GetOptions( AlertGizmo->options(), @cli_options );
 
-    # save timestamp
-    $class->params( [qw( timestamp )], dt2dttz( $class->config_timestamp() ) );
+    # initialize basic parameters including timestamp and footer info
+    $class->_init_params();
 
     # subclass-specific processing for before template
     if ( $class->can("pre_template") ) {
