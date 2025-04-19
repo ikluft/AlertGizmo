@@ -36,9 +36,13 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="3" class="no-padding no-border text-right"><small>
-                                <a href="https://ssd-api.jpl.nasa.gov/doc/cad.html" target="_blank">NASA JPL NEO approaches</a>
-                                via pull-nasa-neo, by Ian Kluft&nbsp;</small></td>
+                        <td colspan="3" class="no-padding no-border text-left">
+                            <small>
+                                <a href="[% footer.desc.0 %]" target="_blank">[% footer.desc.1 %]</a>
+                                via <a href="[% footer.script.0 %]" target="_blank">[% footer.script.1 %]</a>,
+                                by <a href="[% footer.author.0 %]" target="_blank">[% footer.author.1 %]</a>&nbsp;
+                            </small>
+                        </td>
                         <td colspan="2" class="no-padding no-border text-right"><small>[% timestamp %]</small></td>
                     </tr>
                 </tfoot>
