@@ -27,6 +27,7 @@ use File::Fetch;
 use Getopt::Long;
 use DateTime;
 use DateTime::Format::Flexible;
+use DateTime::Format::ISO8601;
 use Template;
 use results;
 use File::Which;
@@ -199,7 +200,23 @@ sub config_timezone
     return $tz;                             # and return value to caller
 }
 
+# parse a timestamp string into a DateTime object
+sub parse_timestamp
+{
+    my $timestamp = shift;
+    my $timestamp_obj = do {
+        try {
+            DateTime::Format::Flexible->parse_datetime($timestamp);
+        } catch ($e) {
+            confess "config_timestamp: timestamp $timestamp is not in a valid date format - $e";
+        }
+    };
+    return $timestamp_obj;
+}
+
 # accessor for timestamp config
+# timestamps are saved as ISO8601 string so YAML dumps are portable for use by other software
+# returns a DateTime object
 sub config_timestamp
 {
     my $class = shift;
@@ -207,23 +224,11 @@ sub config_timestamp
     if ( $class->has_config(qw(params timestamp)) ) {
         my $timestamp = $class->params( ["timestamp"] );
 
-    # check if value placed in timestamp is a DateTime object, or replace date strings with DateTime
-        if ( not $timestamp->isa("DateTime") ) {
-            my $old_timestamp = $timestamp;
-            try {
-                $timestamp = DateTime::Format::Flexible->parse_datetime($old_timestamp);
-            } catch ($e) {
-                confess
-"config_timestamp: timestamp $old_timestamp is not a DateTime object or date string - $e";
-            };
-
-            # overwrite timestamp param with DateTime object
-            $class->params( ["timestamp"], $timestamp );
-        }
-        return $timestamp;
+        # check timestamp string is a valid date and return parsed DateTime object
+        return parse_timestamp( $timestamp );
     }
     my $timestamp_obj = DateTime->now( time_zone => "" . $class->config_timezone() );
-    $class->params( ["timestamp"], $timestamp_obj );
+    $class->params( ["timestamp"], DateTime::Format::ISO8601->format_datetime( $timestamp_obj ) );
     return $timestamp_obj;
 }
 
@@ -449,8 +454,8 @@ sub _init_params
 {
     my ( $class, %attr ) = @_;
 
-    # save timestamp
-    $class->params( [qw( timestamp )], dt2dttz( $class->config_timestamp() ) );
+    # set timestamp
+    $class->config_timestamp();
 
     # save footer info
     # each array here is a pair of link url & text

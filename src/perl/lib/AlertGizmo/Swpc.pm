@@ -613,7 +613,6 @@ sub pre_template
     my $class = shift;
 
     # initialize globals
-    $class->params( ["timestamp"], dt2dttz( $class->config_timestamp() ) );
     $class->params( ["alerts"],    {} );
     $class->params( ["cancel"],    Set::Tiny->new() );
     $class->params( ["supersede"], Set::Tiny->new() );
