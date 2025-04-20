@@ -10,7 +10,7 @@ It started with a [Perl implementation](src/perl) to be used as a prototype for 
 
 ## To Do
 
-Make a github.io site which displays regularly-updated data fetched and processed by AlertGizmo modules.
+Make a github.io site which displays regularly-updated data fetched and processed by AlertGizmo modules, deployed via regularly-timed GitHub Actions and formatted with browser-side code.
 
 ### Examples
 
