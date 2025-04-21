@@ -38,6 +38,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pwd
+          tree || ls -R
           mkdir -p web
           aphra build --source web-in --target web
 
