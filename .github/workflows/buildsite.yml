@@ -37,8 +37,9 @@ jobs:
           PERL5LIB: lib
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          pwd
           mkdir -p web
-          aphra build --source $REPO_NAME/web-in --target web
+          aphra build --source web-in --target web
 
       - name: Update pages artifact
         uses: actions/upload-pages-artifact@v3
