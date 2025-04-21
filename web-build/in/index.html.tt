@@ -1,0 +1,10 @@
+---
+title: About AlertGizmo
+---
+<h1>[% page.title %]</h1>
+
+<p>by Ian Kluft</p>
+
+<p>site content TBD - this is a placeholder while setting up site deployment script</p>
+
+<p>See the <a href="https://github.com/ikluft/AlertGizmo">AlertGizmo software</a> in the Github repository</p>
