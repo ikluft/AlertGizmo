@@ -1,0 +1,60 @@
+---
+# derived from Perl Foundation's Proposed Perl Changes workflow by Dave Cross
+# https://github.com/Perl/PPCs/blob/main/.github/workflows/buildsite.yml
+name: Generate web page
+# yamllint disable rule:line-length
+
+on:  # yamllint disable-line rule:truthy
+  push:
+    branches: 'main'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: perl:latest
+
+    steps:
+      - name: Perl version
+        run: perl -v
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pandoc and cpanm
+        run: apt-get update && apt-get install -y cpanminus
+
+      - name: Install modules
+        run: |
+          cpanm --installdeps --notest App::Aphra
+
+      - name: Get repo name into environment
+        run: |
+          echo "REPO_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
+
+      - name: Create pages
+        env:
+          PERL5LIB: lib
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p web
+          perl aphra build --in $REPO_NAME --target web
+
+      - name: Update pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/
+
+  deploy:
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
