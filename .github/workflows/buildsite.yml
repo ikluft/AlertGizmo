@@ -12,7 +12,7 @@ on:  # yamllint disable-line rule:truthy
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: perl:latest
+    container: perl:5.40
 
     steps:
       - name: Perl version
