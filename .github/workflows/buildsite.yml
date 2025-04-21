@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Perl version
-        run: perl -V
+        run: perl -v
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,7 +26,7 @@ jobs:
 
       - name: Install modules
         run: |
-          cpanm --installdeps --notest App::Aphra
+          cpanm --notest App::Aphra
 
       - name: Get repo name into environment
         run: |
