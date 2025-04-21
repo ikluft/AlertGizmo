@@ -38,7 +38,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p web
-          aphra build --in $REPO_NAME/web-in --target web
+          aphra build --source web-in --target web
 
       - name: Update pages artifact
         uses: actions/upload-pages-artifact@v3
