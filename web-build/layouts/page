@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <meta name=”fediverse:creator” content=”@KO6YQ@pnw.zone” />
+        <meta name="fediverse:creator" content="@KO6YQ@pnw.zone" />
         <title>[% site.name %] - [% page.title %]</title>
     </head>
     <body>
