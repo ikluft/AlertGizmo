@@ -1,7 +1,7 @@
 ---
 # derived from Perl Foundation's Proposed Perl Changes workflow by Dave Cross
 # https://github.com/Perl/PPCs/blob/main/.github/workflows/buildsite.yml
-name: Generate web page
+name: Generate web site
 # yamllint disable rule:line-length
 
 on:  # yamllint disable-line rule:truthy
@@ -21,24 +21,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install pandoc and cpanm
-        run: apt-get update && apt-get install -y cpanminus
+      - name: Install pandoc, cpanm and Perl module packages to reduce workflow load
+        run: apt update && apt install -y cpanminus libdist-zilla-perl libyaml-libyaml-perl libpath-tiny-perl libdist-checkconflicts-perl libmodule-runtime-perl libmoose-perl libclone-perl liburi-perl libmime-base32-perl libtemplate-perl libappconfig-perl libmoosex-nonmoose-perl libmodule-build-tiny-perl libfile-which-perl libipc-run3-perl
 
       - name: Install modules
         run: |
-          cpanm --notest App::Aphra
+          cpanm --notest --without-recommends --without-suggests --skip-installed App::Aphra
+          cd src/perl \
+            && dzil authordeps --missing | cpanm --notest --without-recommends --without-suggests --skip-installed \
+            && dzil listdeps --missing | cpanm --notest --without-recommends --without-suggests --skip-installed \
+            && dzil build \
+            && dzil install
 
       - name: Get repo name into environment
         run: |
           echo "REPO_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
 
-      - name: Create pages
+      - name: Create templated pages
         env:
           PERL5LIB: lib
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mkdir -p web
-          cd web-build && aphra build --target ../web
+          mkdir -p web && cd web-build && aphra build --target ../web
+          mkdir -p web/data \
+            && pull-nasa-neo.pl --dir=$PWD/web/data --tz="US/Pacific" \
+            && pull-swpc-alerts.pl --dir=$PWD/web/data --tz="US/Pacific"
 
       - name: Update pages artifact
         uses: actions/upload-pages-artifact@v3
