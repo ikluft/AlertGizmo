@@ -5,6 +5,14 @@ title: About AlertGizmo
 
 <p>by Ian Kluft</p>
 
-<p>site content TBD - this is a placeholder while setting up site deployment script</p>
+<h2>Data tables</h2>
 
-<p>See the <a href="https://github.com/ikluft/AlertGizmo">AlertGizmo software</a> in the Github repository</p>
+<p>These tables are updated when Github Actions schedules updates the static web site.
+See the <a href="https://github.com/ikluft/AlertGizmo">AlertGizmo software</a> in the Github repository</p>
+
+<h3><a href="data/close-approaches.html">Asteroid close approaches from NASA/JPL</a><h3>
+<!-- <iframe width="100%" height="350" src="data/close-approaches.html"></iframe> -->
+<iframe width="100%" height="350" name="neo-frame" id="neo-frame" onload="autoResize('neo-frame');" onresize="autoResize('neo-frame');" src="data/close-approaches.html"></iframe>
+
+<h3><a href="data/noaa-swpc-alerts.html">Space weather alerts from NOAA SWPC</a></h3>
+<iframe width="100%" height="350" name="swpc-frame" id="swpc-frame" onload="autoResize('swpc-frame');" onresize="autoResize('swpc-frame');" src="data/noaa-swpc-alerts.html"></iframe>

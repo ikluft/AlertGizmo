@@ -1,2 +1,5 @@
 # vim/gvim swap files
 .*.swp
+
+# ignore temporary build directories
+web/
