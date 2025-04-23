@@ -3,6 +3,7 @@
 
 # use Alpine Linux
 FROM alpine:3.21
+COPY entrypoint.sh /entrypoint.sh
 
 # note: do not set WORKDIR because Github Actions mounts the workspace (copy of repo content) as the working directory.
 # To test the container, use docker or podman with --workdir and provide a similar copy of the repo to work with.
@@ -17,4 +18,4 @@ RUN cpanm --notest --quiet Dist::Zilla App::Aphra
 RUN cd $GITHUB_WORKSPACE/src/perl && dzil authordeps --missing | cpanm --notest --quiet && dzil listdeps --missing | cpanm --notest --quiet && dzil build && dzil install
 
 # run entrypoint script
-ENTRYPOINT /bin/sh $GITHUB_WORKSPACE/web-build/container/entrypoint.sh
+ENTRYPOINT [ "/bin/sh", "/entrypoint.sh" ]
