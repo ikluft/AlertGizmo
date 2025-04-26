@@ -2,19 +2,24 @@
 # AlertGizmo web-build (agwb) container build & run script
 # by Ian Kluft
 #
-# In normal operation, the container is launched from Github Actions (see .github/workflows/buildsite.yml )
-# To test the container, run this script within the web-build/container directory as "agwb-build" or "agwb-run".
+# In normal operation:
+# * the container is built from Github Actions after modification to this directory .github/workflows/mk-container.yml
+# * the container is launched from Github Actions after any modification to the repo .github/workflows/buildsite.yml
+# To test the container:
+# * build container: run this script within the web-build/container directory as "agwb-build"
+# * run web build: run this script within the web-build/container directory as "agwb-run"
 
 cmdname="$(basename "$0")"
 ws_src="$(dirname "$(dirname "$PWD")")"
 ws_dst="/opt"
+image_name=alertgizmo-web-build
 if [ "$cmdname" = "agwb-build" ]
 then
-    time podman build --env=GITHUB_WORKSPACE="$ws_dst" --userns=host --security-opt label=disable --volume="$ws_src":"$ws_dst":rw -t alertgizmo-alpine -f Dockerfile \
+    time buildah build --env=GITHUB_WORKSPACE="$ws_dst" --userns=host --security-opt label=disable --volume="$ws_src":"$ws_dst":rw -t "$image_name" -f Containerfile \
         || exit 1
 elif [ "$cmdname" = "agwb-run" ]
 then
-    time podman run --env=GITHUB_WORKSPACE="$ws_dst" --userns=keep-id --security-opt label=disable --volume="$ws_src":"$ws_dst":rw --workdir="$ws_dst" alertgizmo-alpine \
+    time podman run --env=GITHUB_WORKSPACE="$ws_dst" --userns=keep-id --security-opt label=disable --volume="$ws_src":"$ws_dst":rw --workdir="$ws_dst" "$image_name" \
         || exit 1
 else
     echo "command name $0 unexpected - use agwb-build or agwb-run" >&2
