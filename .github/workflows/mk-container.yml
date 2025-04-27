@@ -9,6 +9,7 @@ on:  # yamllint disable-line rule:truthy
   push:
     paths:
       - 'web-build/container'
+      - '!web-build/container/agwb-*'
     branches: 'main'
   workflow_dispatch:
 
@@ -34,6 +35,11 @@ jobs:
           tags: ${{ env.IMAGE_TAGS }}
           containerfiles: |
             web-build/container/Containerfile
+          extra-args: |
+            --env=GITHUB_WORKSPACE="/opt"
+            --volume=".":"/opt":rw
+            --userns=host
+            --security-opt label=disable
           oci: true
           # build-args: |
           #   some_arg=some_value
