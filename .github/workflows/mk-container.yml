@@ -10,6 +10,7 @@ on:  # yamllint disable-line rule:truthy
     paths:
       - 'web-build/container'
       - '!web-build/container/agwb-*'
+      - '.github/workflows/mk-container.yml'
     branches: 'main'
   workflow_dispatch:
 
@@ -36,8 +37,8 @@ jobs:
           containerfiles: |
             web-build/container/Containerfile
           extra-args: |
-            --env=GITHUB_WORKSPACE="$GITHUB_WORKSPACE"
-            --volume="$GITHUB_WORKSPACE":"$GITHUB_WORKSPACE":rw
+            --env=GITHUB_WORKSPACE="${{ github.action_path }}"
+            --volume="${{ github.action_path }}":"${{ github.action_path }}":rw
             --userns=host
             --security-opt label=disable
           oci: true
