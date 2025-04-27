@@ -20,7 +20,6 @@ env:
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
   REGISTRY_USER: ${{ github.actor }}
   REGISTRY_PASSWORD: ${{ github.token }}
-  WS: /github/workspace
 
 jobs:
   build:
@@ -38,8 +37,8 @@ jobs:
           containerfiles: |
             web-build/container/Containerfile
           extra-args: |
-            --env=GITHUB_WORKSPACE=${{ env.WS }}
-            --volume=${{ env.WS }}:${{ env.WS }}:rw
+            --env=GITHUB_WORKSPACE=/opt
+            --volume=$GITHUB_WORKSPACE:/opt:rw
             --userns=host
             --security-opt label=disable
           oci: true
