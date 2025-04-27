@@ -6,6 +6,8 @@ name: Generate web site
 
 on:  # yamllint disable-line rule:truthy
   push:
+    exclude-paths:
+      - 'web-build/container'
     branches: 'main'
   workflow_dispatch:
 
