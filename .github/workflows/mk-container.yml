@@ -36,8 +36,8 @@ jobs:
           containerfiles: |
             web-build/container/Containerfile
           extra-args: |
-            --env=GITHUB_WORKSPACE="/opt"
-            --volume=".":"/opt":rw
+            --env=GITHUB_WORKSPACE="$GITHUB_WORKSPACE"
+            --volume="$GITHUB_WORKSPACE":"$GITHUB_WORKSPACE":rw
             --userns=host
             --security-opt label=disable
           oci: true
