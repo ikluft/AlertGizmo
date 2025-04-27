@@ -8,6 +8,7 @@ on:  # yamllint disable-line rule:truthy
   push:
     exclude-paths:
       - 'web-build/container'
+      - '.github/workflows/mk-container.yml'
     branches: 'main'
   workflow_dispatch:
 
