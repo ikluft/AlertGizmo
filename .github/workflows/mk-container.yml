@@ -8,7 +8,7 @@ name: Make container image
 on:  # yamllint disable-line rule:truthy
   push:
     paths:
-      - 'web-build/container'
+      - 'web-build/container/**'
       - '!web-build/container/agwb-*'
       - '.github/workflows/mk-container.yml'
     branches: 'main'
@@ -37,8 +37,6 @@ jobs:
           containerfiles: |
             ./web-build/container/Containerfile
           extra-args: |
-            --env=/github/workspace
-            --volume=/github/workspace:/github/workspace:rw
             --userns=host
             --security-opt label=disable
           oci: true
