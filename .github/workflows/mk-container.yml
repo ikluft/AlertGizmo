@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        fetch-depth: 0
 
       # Build image using Buildah action
       - name: Buildah Action
