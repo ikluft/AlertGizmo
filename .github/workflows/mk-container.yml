@@ -47,7 +47,7 @@ jobs:
 
       # Push container image to Github Container Registry GHCR
       - name: Push to GHCR
-        uses: ./
+        uses: redhat-actions/push-to-registry@v2
         id: push
         with:
           image: ${{ steps.build_image.outputs.image }}
