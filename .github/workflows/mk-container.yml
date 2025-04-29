@@ -15,7 +15,7 @@ on:  # yamllint disable-line rule:truthy
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: alertgizmo-web-build
+  IMAGE_NAME: alertgizmobuild
   IMAGE_TAGS: agwb-v1 ${{ github.sha }}
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
   REGISTRY_USER: ${{ github.actor }}
