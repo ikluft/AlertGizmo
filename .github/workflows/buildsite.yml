@@ -6,7 +6,7 @@ name: Generate web site
 
 on:  # yamllint disable-line rule:truthy
   push:
-    exclude-paths:
+    paths-ignore:
       - 'web-build/container/**'
       - '.github/workflows/mk-container.yml'
     branches: 'main'
