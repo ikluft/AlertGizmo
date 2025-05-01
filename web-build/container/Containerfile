@@ -4,6 +4,9 @@
 # use Alpine Linux
 FROM alpine:3.21
 
+# Github metadata linking the image to the AlertGizmo repository
+LABEL org.opencontainers.image.source=https://github.com/ikluft/AlertGizmo
+
 # bring in source tree to set up workspace
 COPY . /opt/ws
 
