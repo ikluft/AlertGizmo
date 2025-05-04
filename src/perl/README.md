@@ -146,3 +146,5 @@ Current experimentation includes development of a postprocessing script to contr
 ## Current development plans
 
 Current plans include making a NASA APOD reader (in progress as Apod.pm), a table image generator as an alternative to HTML output, and a Mastodon client to post the images and summary text as periodic updates.
+
+As part of that, a [Linux container is in work to build the AlertGizmo static web site](web-build/container) regularly with live data each build. The container is only useful for building the web site, as a mostly plain-vanilla Linux environment with all the dependencies for the scripts installed. That will keep a minimujm CPU load for more frequent runs to update the static site on the scale of multiple times per day without rebuilding the container image each time.
