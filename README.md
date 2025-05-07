@@ -24,6 +24,8 @@ I will make [the AlertGizmo subpage](https://ikluft.github.io/AlertGizmo/) on my
 
 ### Examples
 
+These examples are screenshots taken at the timestamp listed on the bottom of each image, not live data.
+
 ![Example of AlertGizmo::Neo output for NASA JPL near Earth object pass data](images/Screenshot-AlertGizmo-Neo-example.png)
 
 ![Example of AlertGizmo::Swpc output for NOAA Space Weather Prediction Center aurora data](images/Screenshot-AlertGizmo-Swpc-example.png)
