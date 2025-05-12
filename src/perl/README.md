@@ -141,7 +141,12 @@ An intended upcoming feature is the ability to turn output from any AlertGizmo m
 
 ### Postprocessing scripts
 
-Current experimentation includes development of a postprocessing script to control image generation and posting to social media. The script will be specified by a --postproc=path parameter. But what needs to go in the script is to be determined.
+Current experimentation includes development of a postprocessing script to control image generation and posting to social media. Addition of a --postproc=/path/to/file.yaml parameter specifies a YAML file with parameters for the postprocessing stage(s).
+
+An example of a small postprocessing configuration file would contain YAML data to turn on the AlertGizmo::Postproc::Image module, which generates a PNG image of the HTML which was generated.
+
+    ---
+    - class: AlertGizmo::Postproc::Image
 
 ## Current development plans
 
