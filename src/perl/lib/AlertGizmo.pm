@@ -29,6 +29,7 @@ use DateTime;
 use DateTime::Format::Flexible;
 use DateTime::Format::ISO8601;
 use Template;
+use Template::Stash;
 use results;
 use File::Which;
 use YAML qw(DumpFile);
@@ -208,7 +209,7 @@ sub parse_timestamp
         try {
             DateTime::Format::Flexible->parse_datetime($timestamp);
         } catch ($e) {
-            confess "config_timestamp: timestamp $timestamp is not in a valid date format - $e";
+            confess "parse_timestamp: timestamp $timestamp is not in a valid date format - $e";
         }
     };
     return $timestamp_obj;
@@ -230,6 +231,28 @@ sub config_timestamp
     my $timestamp_obj = DateTime->now( time_zone => "" . $class->config_timezone() );
     $class->params( ["timestamp"], DateTime::Format::ISO8601->format_datetime( $timestamp_obj ) );
     return $timestamp_obj;
+}
+
+# template virtual method: is_future
+# template usage: scalar_var.is_future
+# return true if a text timestamp is in the future
+sub vmethod_is_future
+{
+    my $time_str = shift;
+    my $run_timestamp = __PACKAGE__->config_timestamp();
+    my $time_obj = parse_timestamp( $time_str );
+    return $time_obj > $run_timestamp;
+}
+
+# template virtual method: is_past
+# template usage: scalar_var.is_past
+# return true if a text timestamp is in the past
+sub vmethod_is_past
+{
+    my $time_str = shift;
+    my $run_timestamp = __PACKAGE__->config_timestamp();
+    my $time_obj = parse_timestamp( $time_str );
+    return $time_obj <= $run_timestamp;
 }
 
 # accessor for output directory config
@@ -483,6 +506,10 @@ sub main_inner
 
     # initialize basic parameters including timestamp and footer info
     $class->_init_params();
+
+    # register template vmethods
+    Template::Stash->define_vmethod( "scalar", "is_future", \&vmethod_is_future );
+    Template::Stash->define_vmethod( "scalar", "is_past", \&vmethod_is_past );
 
     # subclass-specific processing for before template
     if ( $class->can("pre_template") ) {

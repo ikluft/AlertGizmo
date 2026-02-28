@@ -25,13 +25,24 @@
                 </thead>
                 <tbody>
 
-                [% FOREACH neo IN neos %]<tr bgcolor="[% neo.bgcolor %]">
+                [% MACRO current_row BLOCK %]
+                <tr bgcolor="#00F0D0"><td colspan="5" class="text-center no-padding"><small><i>present time [% timestamp %]</i></small></td></tr>
+                [% END %]
+                [% FOREACH neo IN neos %]
+                    [% IF ( loop.first || loop.prev.cd_local.is_future ) && neo.cd_local.is_past %]
+                    [% current_row %]
+                    [% END %]
+
+                    <tr bgcolor="[% neo.bgcolor %]">
                     <td class="no-padding"><a href="[% neo.link %]">[% neo.des %]</a></td>
                     <td class="no-padding" title="[% neo.cd_local %]">[% neo.cd %]</td>
                     <td class="text-center no-padding" title="[% neo.dist_min %] - [% neo.dist %] - [% neo.dist_max %]">[% neo.dist %]</td>
                     <td class="text-center no-padding">[% neo.v_rel %]</td>
                     <td class="text-center no-padding" bgcolor="[% neo.diameter_bgcolor %]">[% neo.diameter %]</td>
                 </tr>[% END %]
+                [% IF neos.last.cd_local.is_future %]
+                [% current_row %]
+                [% END %]
 
                 </tbody>
                 <tfoot>
