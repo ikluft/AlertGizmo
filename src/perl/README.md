@@ -62,21 +62,22 @@ Then install App::cpanminus (cpanm), Dist::Zilla (dzil) and Perl::Critic (perlcr
 On Debian-based Linux systems they can be installed with this command as root:
 
     apt update
-    apt install cpanminus libdist-zilla-perl libperl-critic-perl
+    apt install cpanminus libdist-zilla-perl libperl-critic-perl libdist-zilla-plugin-test-perl-critic-perl libtest-perl-critic-perl
 
 On RPM-based Linux systems (Fedora, Red Hat and CentOS derivatives) as root:
 
-    dnf install --refresh perl-App-cpanminus perl-Dist-Zilla perl-Perl-Critic
+    dnf install --refresh perl-App-cpanminus perl-Dist-Zilla perl-Perl-Critic perl-Test-Perl-Critic
+    cpan -T App::cpanminus Test::Perl::Critic Dist::Zilla::Plugin::Test::Perl::Critic </dev/null
 
 On Alpine Linux systems and containers:
 
     apk update && apk upgrade
     apk add make git perl perl-utils perl-alien-build perl-class-tiny perl-config-tiny perl-date-manip perl-datetime perl-datetime-locale perl-datetime-timezone perl-dbd-csv perl-dbd-sqlite perl-dbi perl-http-date perl-ipc-run perl-list-moreutils perl-list-someutils perl-log-dispatch perl-log-log4perl perl-module-build perl-moose perl-moosex-types perl-namespace-autoclean perl-net-ssleay perl-params-validate perl-perlio-utf8_strict perl-pod-parser perl-readonly perl-term-readkey perl-test-leaktrace perl-test-pod perl-test-warn perl-text-template perl-type-tiny perl-xml-dom perl-yaml
-    cpan -T App::cpanminus Dist::Zilla Perl::Critic </dev/null
+    cpan -T App::cpanminus Dist::Zilla Perl::Critic Test::Perl::Critic Dist::Zilla::Plugin::Test::Perl::Critic </dev/null
 
 On operating systems which don't provide binary packages of App::cpanminus, Dist::Zilla or Perl::Critic, install them from CPAN with this command:
 
-    cpan -T App::cpanminus Dist::Zilla Perl::Critic </dev/null
+    cpan -T App::cpanminus Dist::Zilla Perl::Critic Test::Perl::Critic Dist::Zilla::Plugin::Test::Perl::Critic </dev/null
 
 ### Set up AlertGizmo
 
