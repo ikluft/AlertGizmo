@@ -9,7 +9,6 @@
     </head>
     <body class="nogrid">
         <div class="space-alert-div">
-            <p/>
             <table class="space-alert-table">
                 <thead>
                     <tr>
@@ -17,10 +16,10 @@
                     </tr>
                     <tr class="secondary">
                         <th>designation</th>
-                        <th>closest (UTC)</th>
-                        <th>distance (km)</th>
-                        <th>velocity (km/s)</th>
-                        <th>diameter (m)</th>
+                        <th>closest<br/><small>UTC</small></th>
+                        <th>distance<br/><small>km</small</th>
+                        <th>velocity<br/><small>km/s</small</th>
+                        <th>diameter<br/><small>m</small</th>
                     </tr>
                 </thead>
                 <tbody>
