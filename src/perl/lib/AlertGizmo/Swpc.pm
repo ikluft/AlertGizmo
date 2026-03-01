@@ -37,7 +37,6 @@ AlertGizmo::Config->accessor( ["msgid"], {} );
 
 # constants
 Readonly::Scalar my $SWPC_JSON_URL => "https://services.swpc.noaa.gov/products/alerts.json";
-Readonly::Scalar my $OUTDIR        => $FindBin::Bin;
 Readonly::Scalar my $OUTJSON       => "swpc-data.json";
 Readonly::Scalar my $OUTBASE       => "noaa-swpc-alerts";
 Readonly::Scalar my $TEMPLATE      => $OUTBASE . ".tt";
@@ -618,7 +617,7 @@ sub pre_template
     $class->params( ["supersede"], Set::Tiny->new() );
 
     # clear destination symlink
-    my $outlink = $OUTDIR . "/" . $OUTJSON;
+    my $outlink = $class->config_dir() . "/" . $OUTJSON;
     $class->paths( ["outlink"], $outlink );
     if ( -e $outlink ) {
         if ( not -l $outlink ) {
