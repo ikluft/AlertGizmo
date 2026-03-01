@@ -1,6 +1,6 @@
 # AlertGizmo
 # ABSTRACT: base class for AlertGizmo feed monitors
-# Copyright 2024-2025 by Ian Kluft
+# Copyright 2024-2026 by Ian Kluft
 
 # pragmas to silence some warnings from Perl::Critic
 ## no critic (Modules::RequireExplicitPackage)
@@ -32,7 +32,7 @@ use Template;
 use Template::Stash;
 use results;
 use File::Which;
-use YAML qw(DumpFile);
+use YAML;
 use Data::Dumper;
 
 # exceptions/errors
@@ -56,6 +56,12 @@ use Exception::Class (
         isa         => 'AlertGizmo::Exception',
         alias       => 'throw_not_implemented',
         description => "Not implemented error: method must be provided by subclass",
+    },
+
+    'AlertGizmo::Exception::ConfigRead' => {
+        isa         => 'AlertGizmo::Exception',
+        alias       => 'throw_config_read',
+        description => "Configuration read error",
     }
 );
 
@@ -73,6 +79,7 @@ Readonly::Scalar our $DEFAULT_OUTPUT_DIR => $FindBin::Bin;
 Readonly::Scalar our $WKHTMLTOIMAGE => which("wkhtmltoimage");
 Readonly::Scalar our $SUFFIX_HTML => ".html";
 Readonly::Scalar our $SUFFIX_YAML => ".yaml";
+Readonly::Scalar our $YAML_CONFIG_FILE => "alertgizmo-config" . $SUFFIX_YAML;
 
 # return AlertGizmo (or subclass) version number
 sub version
@@ -255,8 +262,7 @@ sub vmethod_is_past
     return $time_obj <= $run_timestamp;
 }
 
-# accessor for output directory config
-# It should not be necessary for subclasses to override this. But it's technically possible.
+# class method: read-accessor for output directory config
 sub config_dir
 {
     my $class = shift;
@@ -472,6 +478,30 @@ sub query_generated_file
     return @result;
 }
 
+# check for YAML config file and if found, load its contents
+sub load_yaml_config
+{
+    my $class = shift;
+    my $config_path = $class->config_dir() . "/" . $YAML_CONFIG_FILE;
+
+    if ( -f $config_path ) {
+        my $yaml_data = YAML::LoadFile( $config_path );
+        my $hash_ref;
+        if ( ref $yaml_data eq "HASH") {
+            $hash_ref = $yaml_data;
+        } elsif ( ref $yaml_data eq "ARRAY" and ref $yaml_data->[0] eq "HASH") {
+            $hash_ref = $yaml_data->[0];
+        } else {
+            throw_config_read( "YAML content does not have a map/hash structure" );
+        }
+
+        # load config entries
+        foreach my $key ( keys %$hash_ref ) {
+            $class->config( $key, $hash_ref->{$key} );
+        }
+    }
+}
+
 # initialize basic parameters including timestamp and footer info
 sub _init_params
 {
@@ -503,6 +533,9 @@ sub main_inner
         push @cli_options, ( $class->cli_options());
     }
     GetOptions( AlertGizmo->options(), @cli_options );
+
+    # after the directory was configured (or defaulted to the Find::Bin directory), we can check for YAML config
+    $class->load_yaml_config();
 
     # initialize basic parameters including timestamp and footer info
     $class->_init_params();
@@ -536,7 +569,7 @@ sub main_inner
 
     # generate a YAML copy of the same params made available to the templater, for formatting by other software
     my $gen_path_out_yaml = $class->config_dir() . "/" . $path_out_base . $SUFFIX_YAML;
-    DumpFile($gen_path_out_yaml, $class->params());
+    YAML::DumpFile($gen_path_out_yaml, $class->params());
     $class->log_generated_file( "path" => $gen_path_out_yaml, "filetype" => "yaml" );
 
     # in test mode, exit before messing with symlink or removing old files
