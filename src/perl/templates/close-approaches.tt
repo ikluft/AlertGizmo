@@ -4,8 +4,11 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>NEO close approaches from NASA/JPL</title>
-        <link rel="stylesheet" href="../css/base.css"> <!-- parts from simple-css but no table styling -->
-        <link rel="stylesheet" href="../css/custom.css"> <!-- customizations for simple-css -->
+        [%- FOREACH path IN stylesheet %]
+
+        <link rel="stylesheet" href="[% path %]">
+        [%- END -%]
+
     </head>
     <body class="nogrid">
         <div class="space-alert-div">

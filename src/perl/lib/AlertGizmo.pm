@@ -486,6 +486,7 @@ sub load_yaml_config
 
     if ( -f $config_path ) {
         my $yaml_data = YAML::LoadFile( $config_path );
+        AlertGizmo::Config->verbose() and say STDERR "load_yaml_config() - " . Dumper($yaml_data);
         my $hash_ref;
         if ( ref $yaml_data eq "HASH") {
             $hash_ref = $yaml_data;
@@ -495,9 +496,9 @@ sub load_yaml_config
             throw_config_read( "YAML content does not have a map/hash structure" );
         }
 
-        # load config entries
+        # load config entries into params tree that will be received by the template
         foreach my $key ( keys %$hash_ref ) {
-            $class->config( $key, $hash_ref->{$key} );
+            $class->params( [ $key ], $hash_ref->{$key} );
         }
     }
 }
