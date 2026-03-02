@@ -30,9 +30,10 @@ use JSON;
 use URI::Escape;
 
 # constants
-Readonly::Scalar my $BACK_DAYS => 15;
-Readonly::Scalar my $NEO_API_URL =>
-    "https://ssd-api.jpl.nasa.gov/cad.api?dist-max=2LD&sort=-date&diameter=true&date-min=%s";
+Readonly::Scalar my $BACK_DAYS    => 15;
+Readonly::Scalar my $AHEAD_DAYS   => 60;
+Readonly::Scalar my $NEO_API_URL  =>
+    "https://ssd-api.jpl.nasa.gov/cad.api?dist-max=1.5LD&sort=-date&diameter=true&date-min=%s&date-max=%s";
 Readonly::Scalar my $NEO_LINK_URL => "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=";
 Readonly::Scalar my $OUTJSON      => "neo-data.json";
 Readonly::Scalar my $OUTBASE      => "close-approaches";
@@ -262,6 +263,12 @@ sub pre_template
     $class->params( ["start_date"], $start_date );
     is_interactive() and say "start date: " . $start_date;
 
+    # compute query end date from $AHEAD_DAYS days ago
+    my $end_date =
+        $timestamp->clone()->set_time_zone('UTC')->add( days => $AHEAD_DAYS )->date();
+    $class->params( ["end_date"], $end_date );
+    is_interactive() and say "end date: " . $end_date;
+
     # clear destination symlink
     $class->paths( [qw( outlink )], $class->config_dir() . "/" . $OUTJSON );
     if ( -e $class->paths( [qw( outlink )] ) ) {
@@ -273,7 +280,7 @@ sub pre_template
         $class->paths( [qw( outlink )] ) . "-" . $class->config_timestamp() );
 
     # perform NEO query
-    my $url = sprintf $NEO_API_URL, $class->params( ["start_date"] );
+    my $url = sprintf $NEO_API_URL, $class->params( ["start_date"] ), $class->params( ["end_date"] );
     $class->retrieve_url( $url );
 
     # read JSON into template data
