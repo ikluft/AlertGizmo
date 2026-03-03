@@ -617,7 +617,7 @@ sub pre_template
     $class->params( ["supersede"], Set::Tiny->new() );
 
     # clear destination symlink
-    my $outlink = $class->config_dir() . "/" . $OUTJSON;
+    my $outlink = AlertGizmo::Config->config_dir() . "/" . $OUTJSON;
     $class->paths( ["outlink"], $outlink );
     if ( -e $outlink ) {
         if ( not -l $outlink ) {
@@ -656,8 +656,9 @@ sub post_template
         or croak "failed to symlink " . $paths->{outlink} . " to " . $paths->{outjson} . "; $!";
 
     # clean up old data files
-    opendir( my $dh, $class->config_dir() )
-        or croak "Can't open $class->config_dir(): $!";
+    my $config_dir = AlertGizmo::Config->config_dir();
+    opendir( my $dh, $config_dir )
+        or croak "Can't open $config_dir: $!";
     my @datafiles = sort { $b cmp $a } grep { /^ $OUTJSON -/x } readdir $dh;
     closedir $dh;
     if ( scalar @datafiles > 15 ) {
@@ -667,7 +668,7 @@ sub post_template
             # double check we're only removing old JSON files
             next if ( ( substr $oldfile, 0, length($OUTJSON) ) ne $OUTJSON );
 
-            my $delpath = $class->config_dir() . "/" . $oldfile;
+            my $delpath = $config_dir . "/" . $oldfile;
             next if not -e $delpath;              # skip if the file doesn't exist
             next if ( ( -M $delpath ) < 1.5 );    # don't remove files newer than 36 hours
 

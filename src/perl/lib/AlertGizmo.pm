@@ -19,12 +19,10 @@ use builtin      qw(true false);
 use Readonly;
 use Carp         qw(carp croak confess);
 use Scalar::Util qw( blessed );
-use FindBin;
 use AlertGizmo::Config;
 use AlertGizmo::Postproc;
 use File::Basename;
 use File::Fetch;
-use Getopt::Long;
 use DateTime;
 use DateTime::Format::Flexible;
 use DateTime::Format::ISO8601;
@@ -32,7 +30,6 @@ use Template;
 use Template::Stash;
 use results;
 use File::Which;
-use YAML;
 use Data::Dumper;
 
 # exceptions/errors
@@ -57,12 +54,6 @@ use Exception::Class (
         alias       => 'throw_not_implemented',
         description => "Not implemented error: method must be provided by subclass",
     },
-
-    'AlertGizmo::Exception::ConfigRead' => {
-        isa         => 'AlertGizmo::Exception',
-        alias       => 'throw_config_read',
-        description => "Configuration read error",
-    }
 );
 
 # initialize class static variables
@@ -75,11 +66,8 @@ AlertGizmo::Config->accessor( ["postproc"],   {} );
 Readonly::Scalar our $PROGNAME => basename($0);
 Readonly::Array our @CLI_OPTIONS =>
     ( "dir:s", "verbose", "test|test_mode", "proxy:s", "timezone|tz:s", "postproc:s" );
-Readonly::Scalar our $DEFAULT_OUTPUT_DIR => $FindBin::Bin;
 Readonly::Scalar our $WKHTMLTOIMAGE => which("wkhtmltoimage");
 Readonly::Scalar our $SUFFIX_HTML => ".html";
-Readonly::Scalar our $SUFFIX_YAML => ".yaml";
-Readonly::Scalar our $YAML_CONFIG_FILE => "alertgizmo-config" . $SUFFIX_YAML;
 
 # return AlertGizmo (or subclass) version number
 sub version
@@ -260,24 +248,6 @@ sub vmethod_is_past
     my $run_timestamp = __PACKAGE__->config_timestamp();
     my $time_obj = parse_timestamp( $time_str );
     return $time_obj <= $run_timestamp;
-}
-
-# class method: read-accessor for output directory config
-sub config_dir
-{
-    my $class = shift;
-
-    if ( $class->has_config(qw(params output_dir)) ) {
-        return $class->params( ["output_dir"] );
-    }
-    my $dir;
-    if ( $class->has_config(qw(options dir)) ) {
-        $dir = $class->options( ["dir"] );
-    } else {
-        $dir = $DEFAULT_OUTPUT_DIR;
-    }
-    $class->params( ["output_dir"], $dir );
-    return $dir;
 }
 
 # class method to set the subclass it was called as to provide the implementation for this run
@@ -478,49 +448,20 @@ sub query_generated_file
     return @result;
 }
 
-# check for YAML config file and if found, load its contents
-sub load_yaml_config
-{
-    my $class = shift;
-    my $config_path = $class->config_dir() . "/" . $YAML_CONFIG_FILE;
-
-    if ( -f $config_path ) {
-        my $yaml_data = YAML::LoadFile( $config_path );
-        AlertGizmo::Config->verbose() and say STDERR "load_yaml_config() - " . Dumper($yaml_data);
-        my $hash_ref;
-        if ( ref $yaml_data eq "HASH") {
-            $hash_ref = $yaml_data;
-        } elsif ( ref $yaml_data eq "ARRAY" and ref $yaml_data->[0] eq "HASH") {
-            $hash_ref = $yaml_data->[0];
-        } else {
-            throw_config_read( "YAML content does not have a map/hash structure" );
-        }
-
-        # load config entries into params tree that will be received by the template
-        foreach my $key ( keys %$hash_ref ) {
-            $class->params( [ $key ], $hash_ref->{$key} );
-        }
-    }
-}
-
 # initialize basic parameters including timestamp and footer info
 sub _init_params
 {
-    my ( $class, %attr ) = @_;
+    my ( $class ) = @_;
 
-    # set timestamp
-    $class->config_timestamp();
-
-    # save footer info
+    # create hash tree of footer config info
     # each array here is a pair of link url & text
-    my @desc   = $class->footer_desc();
-    my @script = $class->footer_script();
-    my @author = $class->footer_author();
-    $class->params( [qw( footer )], {} );
-    $class->params( [qw( footer desc )], \@desc );
-    $class->params( [qw( footer script )], \@script );
-    $class->params( [qw( footer author )], \@author );
-    return;
+    return {
+        footer => {
+            desc => [ $class->footer_desc() ],
+            script => [ $class->footer_script() ],
+            author => [ $class->footer_author() ],
+        }
+    };
 }
 
 # inner mainline called from main() exception-catching wrapper
@@ -533,13 +474,10 @@ sub main_inner
     if ( $class->can("cli_options") ) {
         push @cli_options, ( $class->cli_options());
     }
-    GetOptions( AlertGizmo->options(), @cli_options );
+    AlertGizmo::Config->init( \@cli_options, $class->_init_params());
 
-    # after the directory was configured (or defaulted to the Find::Bin directory), we can check for YAML config
-    $class->load_yaml_config();
-
-    # initialize basic parameters including timestamp and footer info
-    $class->_init_params();
+    # set timestamp
+    $class->config_timestamp();
 
     # register template vmethods
     Template::Stash->define_vmethod( "scalar", "is_future", \&vmethod_is_future );
@@ -551,15 +489,15 @@ sub main_inner
     }
 
     # process template
-    my $config = {
-        INCLUDE_PATH => $class->config_dir(),
+    my $template_config = {
+        INCLUDE_PATH => AlertGizmo::Config->config_dir(),
         INTERPOLATE  => 1,                      # expand "$var" in plain text
         POST_CHOMP   => 1,                      # cleanup whitespace
         EVAL_PERL    => 0,                      # evaluate Perl code blocks
     };
-    my $template = Template->new($config);
+    my $template = Template->new($template_config);
     my $path_out_base = $class->path_out_base();
-    my $gen_path_out_html = $class->config_dir() . "/" . $path_out_base . $SUFFIX_HTML;
+    my $gen_path_out_html = AlertGizmo::Config->config_dir() . "/" . $path_out_base . $SUFFIX_HTML;
     $template->process(
         $class->path_template(),
         $class->params(),
@@ -569,8 +507,7 @@ sub main_inner
     $class->log_generated_file( "path" => $gen_path_out_html, "filetype" => "html" );
 
     # generate a YAML copy of the same params made available to the templater, for formatting by other software
-    my $gen_path_out_yaml = $class->config_dir() . "/" . $path_out_base . $SUFFIX_YAML;
-    YAML::DumpFile($gen_path_out_yaml, $class->params());
+    my $gen_path_out_yaml = AlertGizmo::Config->params_yaml_dump( $path_out_base );
     $class->log_generated_file( "path" => $gen_path_out_yaml, "filetype" => "yaml" );
 
     # in test mode, exit before messing with symlink or removing old files

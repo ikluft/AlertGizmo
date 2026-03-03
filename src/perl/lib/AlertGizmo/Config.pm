@@ -1,6 +1,6 @@
 # AlertGizmo::Config
 # ABSTRACT: configuration data for AlertGizmo classes
-# Copyright (c) 2024 by Ian Kluft
+# Copyright (c) 2024-2026 by Ian Kluft
 
 # pragmas to silence some warnings from Perl::Critic
 ## no critic (Modules::RequireExplicitPackage)
@@ -16,13 +16,35 @@ use parent       qw(Class::Singleton);
 use experimental qw(builtin try);
 use feature      qw(say try);
 use builtin      qw(true false);
+use Readonly;
 use Carp         qw(confess);
+use Getopt::Long;
+use FindBin;
+use YAML;
+use Data::Dumper;
+
+# exceptions/errors
 use results;
 use results::exceptions (
     'NotFound'        => { has => ['name'] },
     'NonIntegerIndex' => { has => ['str'] },
     qw( InvalidNodeType NoAutoArray UndefValue )
 );
+use Exception::Class (
+    'AlertGizmo::Config::Exception',
+
+    'AlertGizmo::Config::Exception::ReadError' => {
+        isa         => 'AlertGizmo::Config::Exception',
+        alias       => 'throw_config_read',
+        description => "Configuration read error",
+    },
+
+);
+
+# constants
+Readonly::Scalar our $DEFAULT_OUTPUT_DIR => $FindBin::Bin;
+Readonly::Scalar our $SUFFIX_YAML => ".yaml";
+Readonly::Scalar our $YAML_CONFIG_FILE => "alertgizmo-config" . $SUFFIX_YAML;
 
 # helper function to allow methods to get the singleton instance whether called as a class or instance method
 # private class function
@@ -290,6 +312,92 @@ sub _str_is_int
     return true if $str =~ /^ \d+ $/x;
     return false;
 }
+
+# class method: read-accessor for output directory config
+sub config_dir
+{
+    my $class_or_obj = shift;
+    my $instance = _class_or_obj($class_or_obj);
+
+    # if output directory was already saved, use that
+    if ( $instance->contains(qw(params output_dir)) ) {
+        return $instance->read_accessor( qw(params output_dir) )->unwrap();
+    }
+
+    # determine output directory from CLI option or default to directory of the running script
+    my $dir;
+    if ( $instance->contains(qw(options dir)) ) {
+        $dir = $instance->read_accessor( qw(options dir) )->unwrap();
+    } else {
+        $dir = $DEFAULT_OUTPUT_DIR;
+    }
+    $instance->write_accessor( [ qw(params output_dir) ], $dir )->unwrap();
+    return $dir;
+}
+
+#
+# high-level class functions: initialization, YAML data loading
+#
+
+# check for YAML config file and if found, load its contents
+sub load_yaml_config
+{
+    my $class_or_obj = shift;
+    my $instance = _class_or_obj($class_or_obj);
+    my $yaml_path = $instance->config_dir() . "/" . $YAML_CONFIG_FILE;
+
+    if ( -f $yaml_path ) {
+        my $yaml_data = YAML::LoadFile( $yaml_path );
+        __PACKAGE__->verbose() and say STDERR "load_yaml_config() - " . Dumper($yaml_data);
+        my $hash_ref;
+        if ( ref $yaml_data eq "HASH") {
+            $hash_ref = $yaml_data;
+        } elsif ( ref $yaml_data eq "ARRAY" and ref $yaml_data->[0] eq "HASH") {
+            $hash_ref = $yaml_data->[0];
+        } else {
+            throw_config_read( __PACKAGE__ . ": YAML content does not have a map/hash structure" );
+        }
+
+        # load config entries into params tree that will be received by the template
+        foreach my $key ( keys %$hash_ref ) {
+            $instance->write_accessor( [ "params", $key ], $hash_ref->{$key} )->unwrap();
+        }
+    }
+    return;
+}
+
+# initialization with CLI options, initial parameters and YAML file loading
+sub init
+{
+    my ( $class_or_obj, $cli_options_ref, $init_params_ref ) = @_;
+    my $instance = _class_or_obj($class_or_obj);
+
+    # read CLI options into config[options]
+    my $options_ref = $instance->read_accessor( "options" )->unwrap();
+    GetOptions( $options_ref, @$cli_options_ref );
+
+    # copy %$init_params_ref into config{params}
+    foreach my $key ( keys %$init_params_ref ) {
+        $instance->write_accessor( [ "params", $key ], $init_params_ref->{$key});
+    }
+
+    # after the directory was configured (or defaulted to the Find::Bin directory), we can check for YAML config
+    $instance->load_yaml_config();
+
+    return;
+}
+
+# generate a YAML copy of the same params made available to the templater, for formatting by other software
+sub params_yaml_dump
+{
+    my ( $class_or_obj, $basename_yaml ) = @_;
+    my $instance = _class_or_obj($class_or_obj);
+
+    my $out_yaml = $instance->config_dir() . "/" . $basename_yaml . $SUFFIX_YAML;
+    YAML::DumpFile($out_yaml, $instance->read_accessor( qw(params) )->unwrap());
+    return $out_yaml;
+}
+
 
 1;
 

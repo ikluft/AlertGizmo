@@ -270,7 +270,7 @@ sub pre_template
     is_interactive() and say "end date: " . $end_date;
 
     # clear destination symlink
-    $class->paths( [qw( outlink )], $class->config_dir() . "/" . $OUTJSON );
+    $class->paths( [qw( outlink )], AlertGizmo::Config->config_dir() . "/" . $OUTJSON );
     if ( -e $class->paths( [qw( outlink )] ) ) {
         if ( not -l $class->paths( [qw( outlink )] ) ) {
             croak "destination file " . $class->paths( [qw( outlink )] ) . " is not a symlink";
@@ -361,8 +361,9 @@ sub post_template
         . $class->paths( ["outjson"] ) . ": $!";
 
     # clean up old data files
-    opendir( my $dh, $class->config_dir() )
-        or croak "Can't open $class->config_dir(): $!";
+    my $config_dir = AlertGizmo::Config->config_dir();
+    opendir( my $dh, $config_dir )
+        or croak "Can't open $config_dir: $!";
     my @datafiles = sort { $b cmp $a } grep { /^ $OUTJSON -/x } readdir $dh;
     closedir $dh;
     if ( scalar @datafiles > 5 ) {
@@ -372,7 +373,7 @@ sub post_template
             # double check we're only removing old JSON files
             next if ( ( substr $oldfile, 0, length($OUTJSON) ) ne $OUTJSON );
 
-            my $delpath = $class->config_dir() . "/" . $oldfile;
+            my $delpath = $config_dir . "/" . $oldfile;
             next if not -e $delpath;               # skip if the file doesn't exist
             next if ( ( -M $delpath ) < 0.65 );    # don't remove files newer than 15 hours
 
