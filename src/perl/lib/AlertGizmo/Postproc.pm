@@ -39,17 +39,17 @@ sub new
 # check if verbose or testing modes are on
 sub is_verbose
 {
-    return ( AlertGizmo->config_test_mode() or AlertGizmo::Config->verbose() );
+    return ( AlertGizmo::Config->test_mode() or AlertGizmo::Config->verbose() );
 }
 
 # load YAML data from post-processing configuration file path
 # returns 1 if postproc data was loaded, otherwise 0
 sub load_prox
 {
-    if ( AlertGizmo->has_config(qw(options postproc)) ) {
-        my $postproc_path = AlertGizmo->options( ["postproc"] );
+    if ( AlertGizmo::Config->has(qw(options postproc)) ) {
+        my $postproc_path = AlertGizmo::Config->options( ["postproc"] );
         my @postproc_yaml = LoadFile( $postproc_path );
-        AlertGizmo->params( ["postprox"], \@postproc_yaml );
+        AlertGizmo::Config->params( ["postprox"], \@postproc_yaml );
         return 1;
     }
     return 0;
@@ -61,7 +61,7 @@ sub run_prox
     my @run_status;
 
     # load postprocessing instructions from first YAML doc
-    my $postprox_top_ref = AlertGizmo->params( ["postprox"]);
+    my $postprox_top_ref = AlertGizmo::Config->params( ["postprox"]);
     my $reftype = ( ref $postprox_top_ref ) ? ref $postprox_top_ref : "non-ref scalar";
     if ( $reftype ne "ARRAY" ) {
         carp "invalid postprocessing structure: doc list expected, not $reftype";

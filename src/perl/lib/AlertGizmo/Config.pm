@@ -19,6 +19,9 @@ use builtin      qw(true false);
 use Readonly;
 use Carp         qw(confess);
 use Getopt::Long;
+use DateTime;
+use DateTime::Format::Flexible;
+use DateTime::Format::ISO8601;
 use FindBin;
 use YAML;
 use Data::Dumper;
@@ -313,8 +316,140 @@ sub _str_is_int
     return false;
 }
 
+#
+# external interface & wrappers
+#
+
+# begin TODO
+
+# wrapper for AlertGizmo::Config read/write accessor
+sub config
+{
+    my ( $class_or_obj, $keys_ref, $value ) = @_;
+    my $instance = _class_or_obj($class_or_obj);
+    if ( not defined $keys_ref ) {
+        return $instance->accessor()->unwrap();
+    }
+    my $result = $instance->accessor( $keys_ref, $value );
+    my $keys_str = join( "-", @$keys_ref );
+    $instance->verbose() and say STDERR "config: $keys_str result type " . ref($result);
+    if ( $result->is_err() ) {
+        my $err = $result->unwrap_err();
+        $instance->verbose() and say STDERR "config: $keys_str result err " . ref($err);
+        if ( $err->isa('AlertGizmo::Config::Exception::NotFound') ) {
+            # process not found error into undef result as common Perl code expects
+            return;
+        }
+        confess($err);
+    }
+
+    # returns on success
+    my $resval = $result->unwrap();
+    $instance->verbose() and say STDERR "config: $keys_str result value => "
+        . ( ref $resval ? Dumper( $resval ) : $resval // "[undef]" );
+    return $resval;
+}
+
+# wrapper for AlertGizmo::Config existence-test method
+sub has
+{
+    my ( $class_or_obj, @keys ) = @_;
+    my $instance = _class_or_obj($class_or_obj);
+    return $instance->contains(@keys);
+}
+
+# accessor wrapper for options top-level config
+sub options
+{
+    my ( $class_or_obj, $keys_ref, $value ) = @_;
+    my $instance = _class_or_obj($class_or_obj);
+    return $instance->config( [ "options", @{ $keys_ref // [] } ], $value );
+}
+
+# accessor wrapper for params top-level config
+sub params
+{
+    my ( $class_or_obj, $keys_ref, $value ) = @_;
+    my $instance = _class_or_obj($class_or_obj);
+    return $instance->config( [ "params", @{ $keys_ref // [] } ], $value );
+}
+
+# accessor wrapper for paths top-level config
+sub paths
+{
+    my ( $class_or_obj, $keys_ref, $value ) = @_;
+    my $instance = _class_or_obj($class_or_obj);
+    return $instance->config( [ "paths", @{ $keys_ref // [] } ], $value );
+}
+
+# accessor for test mode config
+sub test_mode
+{
+    my $class_or_obj = shift;
+    my $instance = _class_or_obj($class_or_obj);
+    return $instance->options( ["test"] ) // false;
+}
+
+# accessor for proxy config
+sub proxy
+{
+    my $class_or_obj = shift;
+    my $instance = _class_or_obj($class_or_obj);
+    return $instance->options( ["proxy"] ) // $ENV{PROXY} // $ENV{SOCKS_PROXY};
+}
+
+# accessor for timezone config
+sub timezone
+{
+    my $class_or_obj = shift;
+    my $instance = _class_or_obj($class_or_obj);
+
+    if ( $instance->has(qw(params timezone)) ) {
+        return $instance->params( ["timezone"] );
+    }
+    my $tz = $instance->options( ["timezone"] )
+        // "UTC";    # get TZ value from CLI options or default UTC
+    $instance->params( ["timezone"], $tz );    # save to template params
+    return $tz;                             # and return value to caller
+}
+
+# parse a timestamp string into a DateTime object
+sub parse_timestamp
+{
+    my $timestamp = shift;
+    my $timestamp_obj = do {
+        try {
+            DateTime::Format::Flexible->parse_datetime($timestamp);
+        } catch ($e) {
+            confess "parse_timestamp: timestamp $timestamp is not in a valid date format - $e";
+        }
+    };
+    return $timestamp_obj;
+}
+
+# accessor for timestamp config
+# timestamps are saved as ISO8601 string so YAML dumps are portable for use by other software
+# returns a DateTime object
+sub timestamp
+{
+    my $class_or_obj = shift;
+    my $instance = _class_or_obj($class_or_obj);
+
+    if ( $instance->has(qw(params timestamp)) ) {
+        my $timestamp = $instance->params( ["timestamp"] );
+
+        # check timestamp string is a valid date and return parsed DateTime object
+        return parse_timestamp( $timestamp );
+    }
+    my $timestamp_obj = DateTime->now( time_zone => "" . $instance->timezone() );
+    $instance->params( ["timestamp"], DateTime::Format::ISO8601->format_datetime( $timestamp_obj ) );
+    return $timestamp_obj;
+}
+
+# end TODO
+
 # class method: read-accessor for output directory config
-sub config_dir
+sub dir
 {
     my $class_or_obj = shift;
     my $instance = _class_or_obj($class_or_obj);
@@ -344,7 +479,7 @@ sub load_yaml_config
 {
     my $class_or_obj = shift;
     my $instance = _class_or_obj($class_or_obj);
-    my $yaml_path = $instance->config_dir() . "/" . $YAML_CONFIG_FILE;
+    my $yaml_path = $instance->dir() . "/" . $YAML_CONFIG_FILE;
 
     if ( -f $yaml_path ) {
         my $yaml_data = YAML::LoadFile( $yaml_path );
@@ -372,6 +507,12 @@ sub init
     my ( $class_or_obj, $cli_options_ref, $init_params_ref ) = @_;
     my $instance = _class_or_obj($class_or_obj);
 
+    # initialize class static variables
+    $instance->config( ["options"], {} );
+    $instance->config( ["params"],  {} );
+    $instance->config( ["paths"],   {} );
+    $instance->config( ["postproc"],   {} );
+
     # read CLI options into config[options]
     my $options_ref = $instance->read_accessor( "options" )->unwrap();
     GetOptions( $options_ref, @$cli_options_ref );
@@ -384,6 +525,9 @@ sub init
     # after the directory was configured (or defaulted to the Find::Bin directory), we can check for YAML config
     $instance->load_yaml_config();
 
+    # set timestamp
+    $instance->timestamp();
+
     return;
 }
 
@@ -393,7 +537,7 @@ sub params_yaml_dump
     my ( $class_or_obj, $basename_yaml ) = @_;
     my $instance = _class_or_obj($class_or_obj);
 
-    my $out_yaml = $instance->config_dir() . "/" . $basename_yaml . $SUFFIX_YAML;
+    my $out_yaml = $instance->dir() . "/" . $basename_yaml . $SUFFIX_YAML;
     YAML::DumpFile($out_yaml, $instance->read_accessor( qw(params) )->unwrap());
     return $out_yaml;
 }

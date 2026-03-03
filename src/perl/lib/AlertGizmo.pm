@@ -23,9 +23,6 @@ use AlertGizmo::Config;
 use AlertGizmo::Postproc;
 use File::Basename;
 use File::Fetch;
-use DateTime;
-use DateTime::Format::Flexible;
-use DateTime::Format::ISO8601;
 use Template;
 use Template::Stash;
 use results;
@@ -55,12 +52,6 @@ use Exception::Class (
         description => "Not implemented error: method must be provided by subclass",
     },
 );
-
-# initialize class static variables
-AlertGizmo::Config->accessor( ["options"], {} );
-AlertGizmo::Config->accessor( ["params"],  {} );
-AlertGizmo::Config->accessor( ["paths"],   {} );
-AlertGizmo::Config->accessor( ["postproc"],   {} );
 
 # constants
 Readonly::Scalar our $PROGNAME => basename($0);
@@ -101,141 +92,14 @@ sub footer_script { not_implemented( "footer_script" ); }
 sub footer_author { not_implemented( "footer_author" ); }
 ## critic (RequireFinalReturn)
 
-#
-# Configuration wrapper functions for AlertGizmo::Config
-#
-
-# wrapper for AlertGizmo::Config read/write accessor
-sub config
-{
-    my ( $class, $keys_ref, $value ) = @_;
-    if ( not defined $keys_ref ) {
-        return AlertGizmo::Config->accessor()->unwrap();
-    }
-    my $result = AlertGizmo::Config->accessor( $keys_ref, $value );
-    my $keys_str = join( "-", @$keys_ref );
-    AlertGizmo::Config->verbose() and say STDERR "config: $keys_str result type " . ref($result);
-    if ( $result->is_err() ) {
-        my $err = $result->unwrap_err();
-        AlertGizmo::Config->verbose() and say STDERR "config: $keys_str result err " . ref($err);
-        if ( $err->isa('AlertGizmo::Config::Exception::NotFound') ) {
-
-            # process not found error into undef result as common Perl code expects
-            return;
-        }
-        confess($err);
-    }
-
-    # returns on success
-    my $resval = $result->unwrap();
-    AlertGizmo::Config->verbose() and say STDERR "config: $keys_str result value => "
-        . ( ref $resval ? Dumper( $resval ) : $resval // "[undef]" );
-    return $resval;
-}
-
-# wrapper for AlertGizmo::Config existence-test method
-sub has_config
-{
-    my ( $class, @keys ) = @_;
-    return AlertGizmo::Config->contains(@keys);
-}
-
-# wrapper for AlertGizmo::Config delete method
-sub del_config
-{
-    my ( $class, @keys ) = @_;
-    return AlertGizmo::Config->del(@keys);
-}
-
-# accessor wrapper for options top-level config
-sub options
-{
-    my ( $class, $keys_ref, $value ) = @_;
-    return $class->config( [ "options", @{ $keys_ref // [] } ], $value );
-}
-
-# accessor wrapper for params top-level config
-sub params
-{
-    my ( $class, $keys_ref, $value ) = @_;
-    return $class->config( [ "params", @{ $keys_ref // [] } ], $value );
-}
-
-# accessor wrapper for paths top-level config
-sub paths
-{
-    my ( $class, $keys_ref, $value ) = @_;
-    return $class->config( [ "paths", @{ $keys_ref // [] } ], $value );
-}
-
-# accessor for test mode config
-sub config_test_mode
-{
-    my $class = shift;
-    return $class->options( ["test"] ) // false;
-}
-
-# accessor for proxy config
-sub config_proxy
-{
-    my $class = shift;
-    return $class->options( ["proxy"] ) // $ENV{PROXY} // $ENV{SOCKS_PROXY};
-}
-
-# accessor for timezone config
-sub config_timezone
-{
-    my $class = shift;
-
-    if ( $class->has_config(qw(params timezone)) ) {
-        return $class->params( ["timezone"] );
-    }
-    my $tz = $class->options( ["timezone"] )
-        // "UTC";    # get TZ value from CLI options or default UTC
-    $class->params( ["timezone"], $tz );    # save to template params
-    return $tz;                             # and return value to caller
-}
-
-# parse a timestamp string into a DateTime object
-sub parse_timestamp
-{
-    my $timestamp = shift;
-    my $timestamp_obj = do {
-        try {
-            DateTime::Format::Flexible->parse_datetime($timestamp);
-        } catch ($e) {
-            confess "parse_timestamp: timestamp $timestamp is not in a valid date format - $e";
-        }
-    };
-    return $timestamp_obj;
-}
-
-# accessor for timestamp config
-# timestamps are saved as ISO8601 string so YAML dumps are portable for use by other software
-# returns a DateTime object
-sub config_timestamp
-{
-    my $class = shift;
-
-    if ( $class->has_config(qw(params timestamp)) ) {
-        my $timestamp = $class->params( ["timestamp"] );
-
-        # check timestamp string is a valid date and return parsed DateTime object
-        return parse_timestamp( $timestamp );
-    }
-    my $timestamp_obj = DateTime->now( time_zone => "" . $class->config_timezone() );
-    $class->params( ["timestamp"], DateTime::Format::ISO8601->format_datetime( $timestamp_obj ) );
-    return $timestamp_obj;
-}
-
 # template virtual method: is_future
 # template usage: scalar_var.is_future
 # return true if a text timestamp is in the future
 sub vmethod_is_future
 {
     my $time_str = shift;
-    my $run_timestamp = __PACKAGE__->config_timestamp();
-    my $time_obj = parse_timestamp( $time_str );
+    my $run_timestamp = AlertGizmo::Config->timestamp();
+    my $time_obj = AlertGizmo::Config::parse_timestamp( $time_str );
     return $time_obj > $run_timestamp;
 }
 
@@ -245,8 +109,8 @@ sub vmethod_is_future
 sub vmethod_is_past
 {
     my $time_str = shift;
-    my $run_timestamp = __PACKAGE__->config_timestamp();
-    my $time_obj = parse_timestamp( $time_str );
+    my $run_timestamp = AlertGizmo::Config->timestamp();
+    my $time_obj = AlertGizmo::Config::parse_timestamp( $time_str );
     return $time_obj <= $run_timestamp;
 }
 
@@ -261,7 +125,7 @@ sub set_class
     if ( not $class->isa(__PACKAGE__) ) {
         croak "error: $class is not a subclass of " . __PACKAGE__;
     }
-    $class->config( ["class"], $class );
+    AlertGizmo::Config->config( ["class"], $class );
     return;
 }
 
@@ -281,8 +145,8 @@ sub dt2dttz
 sub gen_class_name
 {
     # If "class" config is set, then this is already decided. So use that.
-    if ( __PACKAGE__->has_config("class") ) {
-        return __PACKAGE__->config( ["class"] );
+    if ( AlertGizmo::Config->has("class") ) {
+        return AlertGizmo::Config->config( ["class"] );
     }
 
     # use the name of the script to determine which AlertGizmo subclass to load
@@ -311,8 +175,8 @@ sub test_dump
     my $class = shift;
 
     # in test mode, exit before messing with symlink or removing old files
-    if ( $class->config_test_mode() ) {
-        say STDERR "test mode: params=" . Dumper( $class->params() );
+    if ( AlertGizmo::Config->test_mode() ) {
+        say STDERR "test mode: params=" . Dumper( AlertGizmo::Config->params() );
         exit 0;
     }
     return;
@@ -367,18 +231,18 @@ sub net_get
 sub retrieve_url
 {
     my ( $class, $url ) = @_;
-    my $paths = $class->paths();
+    my $paths = AlertGizmo::Config->paths();
 
     # perform network request
-    if ( $class->config_test_mode() ) {
+    if ( AlertGizmo::Config->test_mode() ) {
         if ( not -e $paths->{outlink} ) {
             croak "test mode requires $paths->{outlink} to exist";
         }
         say STDERR "*** skip network access in test mode ***";
     } else {
-        my $proxy = $class->config_proxy();
+        my $proxy = AlertGizmo::Config->proxy();
         try {
-            $class->net_get( $url, { file => $class->paths( ["outjson"] ) } );
+            $class->net_get( $url, { file => $paths->{outjson} } );
         } catch ( $e ) {
             confess "failed to get URL ($url): " . $e;
         }
@@ -408,15 +272,15 @@ sub log_generated_file
         join( ", ", map { $_ . "=>" . $attr{$_} } keys %attr ) . ")\n";
 
     # make sure log array exists
-    if ( not $class->has_config( "generated_files" )) {
-        $class->config( [ "generated_files" ], [] );
+    if ( not AlertGizmo::Config->has( "generated_files" )) {
+        AlertGizmo::Config->config( [ "generated_files" ], [] );
     }
 
     # add the new log entry
-    my $genfiles_ref = $class->config( [ "generated_files" ] );
+    my $genfiles_ref = AlertGizmo::Config->config( [ "generated_files" ] );
     my @log_entry = ( $class, $attr{ path }, $attr{ filetype } );
     push @$genfiles_ref, \@log_entry;
-    $class->config( [ "generated_files" ], $genfiles_ref );
+    AlertGizmo::Config->config( [ "generated_files" ], $genfiles_ref );
     return;
 }
 
@@ -428,7 +292,7 @@ sub query_generated_file
     my $q_type = $attr{type};
 
     # short-circuit results if no query parameters and just return everything
-    my $genfiles_ref = $class->config( [ "generated_files" ] );
+    my $genfiles_ref = AlertGizmo::Config->config( [ "generated_files" ] );
     if ( not defined $q_class and not defined $q_type ) {
         return @$genfiles_ref;
     }
@@ -476,9 +340,6 @@ sub main_inner
     }
     AlertGizmo::Config->init( \@cli_options, $class->_init_params());
 
-    # set timestamp
-    $class->config_timestamp();
-
     # register template vmethods
     Template::Stash->define_vmethod( "scalar", "is_future", \&vmethod_is_future );
     Template::Stash->define_vmethod( "scalar", "is_past", \&vmethod_is_past );
@@ -490,17 +351,17 @@ sub main_inner
 
     # process template
     my $template_config = {
-        INCLUDE_PATH => AlertGizmo::Config->config_dir(),
+        INCLUDE_PATH => AlertGizmo::Config->dir(),
         INTERPOLATE  => 1,                      # expand "$var" in plain text
         POST_CHOMP   => 1,                      # cleanup whitespace
         EVAL_PERL    => 0,                      # evaluate Perl code blocks
     };
     my $template = Template->new($template_config);
     my $path_out_base = $class->path_out_base();
-    my $gen_path_out_html = AlertGizmo::Config->config_dir() . "/" . $path_out_base . $SUFFIX_HTML;
+    my $gen_path_out_html = AlertGizmo::Config->dir() . "/" . $path_out_base . $SUFFIX_HTML;
     $template->process(
         $class->path_template(),
-        $class->params(),
+        AlertGizmo::Config->params(),
         $gen_path_out_html,
         binmode => ':utf8'
     ) or croak "template processing error: " . $template->error();
@@ -525,7 +386,7 @@ sub main_inner
     }
 
     # config dump for verbose mode
-    AlertGizmo::Config->verbose() and say STDERR "config dump: " . Dumper( $class->config() );
+    AlertGizmo::Config->verbose() and say STDERR "config dump: " . Dumper( AlertGizmo::Config->config() );
 
     return;
 }

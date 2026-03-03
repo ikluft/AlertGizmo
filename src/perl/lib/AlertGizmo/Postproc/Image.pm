@@ -37,7 +37,7 @@ sub html2image
     # derive output file name
     my $out_image = $f_path.".png";
     if ( $self->is_verbose() ) {
-        say STDERR "test mode: $class html2image() params=" . Dumper( AlertGizmo->params() );
+        say STDERR "test mode: $class html2image() params=" . Dumper( AlertGizmo::Config->params() );
     }
 
     # use IPC::Run to run the command, avoiding launching a shell

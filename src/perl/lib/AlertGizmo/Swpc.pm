@@ -33,7 +33,7 @@ use JSON;
 use Data::Dumper;
 
 # initialize class static variables
-AlertGizmo::Config->accessor( ["msgid"], {} );
+AlertGizmo::Config->config( ["msgid"], {} );
 
 # constants
 Readonly::Scalar my $SWPC_JSON_URL => "https://services.swpc.noaa.gov/products/alerts.json";
@@ -129,7 +129,7 @@ sub datestr2dt
         minute    => $min,
         time_zone => $zone
     );
-    $dt->set_time_zone( $class->config_timezone() );    # convert to same time in selected time zone
+    $dt->set_time_zone( AlertGizmo::Config->timezone() );    # convert to same time in selected time zone
     return $dt;
 }
 
@@ -147,7 +147,7 @@ sub issue2dt
         second    => int($sec),
         time_zone => "UTC"
     );
-    $dt->set_time_zone( $class->config_timezone() );    # convert to same time in selected time zone
+    $dt->set_time_zone( AlertGizmo::Config->timezone() );    # convert to same time in selected time zone
     return $dt;
 }
 
@@ -211,12 +211,12 @@ sub get_msgid
 
     # debugging temporary: check config contents
     if ( AlertGizmo::Config->verbose() ) {
-        my $config_ref = $class->config();
+        my $config_ref = AlertGizmo::Config->config();
         say STDERR "debug: get_msgid config -> " . Dumper( $config_ref );
     }
 
     # get msgid hash from config
-    my $msgid_ref = $class->config( ["msgid"] );
+    my $msgid_ref = AlertGizmo::Config->config( ["msgid"] );
     if ( exists $msgid_ref->{$msg_key} ) {
         return $msgid_ref->{$msg_key};
     }
@@ -236,7 +236,7 @@ sub get_msgid
 sub alert_set
 {
     my ( $class, $msgid, $state_str ) = @_;
-    my $params = $class->params();
+    my $params = AlertGizmo::Config->params();
     if ( not exists $params->{alerts}{$msgid} ) {
         croak "attempt to set as $state_str a non-existent alert: $msgid";
     }
@@ -295,7 +295,7 @@ sub alert_set_supersede
 sub serial_cancel
 {
     my ( $class, $serial ) = @_;
-    my $params = $class->params();
+    my $params = AlertGizmo::Config->params();
 
     # add msgid to cancel set
     $params->{cancel}->insert($serial);
@@ -306,7 +306,7 @@ sub serial_cancel
 sub serial_supersede
 {
     my ( $class, $serial ) = @_;
-    my $params = $class->params();
+    my $params = AlertGizmo::Config->params();
 
     # add msgid to supersede set
     $params->{supersede}->insert($serial);
@@ -317,7 +317,7 @@ sub serial_supersede
 sub alert_is
 {
     my ( $class, $msgid, $state_str ) = @_;
-    my $params = $class->params();
+    my $params = AlertGizmo::Config->params();
     my $alert  = $params->{alerts}{$msgid};
     return $alert->{derived}{status} eq $state_str;
 }
@@ -339,7 +339,7 @@ sub alert_is_supersede
 sub save_active_alerts
 {
     my $class  = shift;
-    my $params = $class->params();
+    my $params = AlertGizmo::Config->params();
 
     $params->{active} = [ sort grep { $class->alert_is_active($_) } keys %{ $params->{alerts} } ];
     return;
@@ -350,16 +350,16 @@ sub test_dump
 {
     my $class = shift;
     my $verbose_mode = AlertGizmo::Config->verbose();
-    my $test_mode = $class->config_test_mode();
+    my $test_mode = AlertGizmo::Config->test_mode();
 
     # in verbose mode, dump the params hash
     if ( $verbose_mode ) {
-        say STDERR Dumper( $class->params() );
+        say STDERR Dumper( AlertGizmo::Config->params() );
     }
 
     # in test or verbose mode, show structure of SWPC alert data
     if ( $test_mode or $verbose_mode ) {
-        my $params = $class->params();
+        my $params = AlertGizmo::Config->params();
         say STDERR 'test mode';
         say STDERR '* alert keys: ' . join( " ", sort keys %{ $params->{alerts} } );
         say STDERR '* active ' . join( " ", @{ $params->{active} } );
@@ -412,7 +412,7 @@ sub date_from_level_forecast
                 minute    => 59,
                 time_zone => "UTC",
             );
-            $expire_dt->set_time_zone( $class->config_timezone() );
+            $expire_dt->set_time_zone( AlertGizmo::Config->timezone() );
             $item_ref->{derived}{end} = DateTime::Format::ISO8601->format_datetime($expire_dt);
         }
     }
@@ -484,10 +484,10 @@ sub compute_alert_range
 sub save_alert_status
 {
     my ( $class, $item_ref ) = @_;
-    my $params    = $class->params();
+    my $params    = AlertGizmo::Config->params();
     my $msgid     = $item_ref->{derived}{id};
     my $serial    = $item_ref->{msg_data}{$SERIAL_HEADER};
-    my $timestamp = $class->config_timestamp();
+    my $timestamp = AlertGizmo::Config->timestamp();
 
     # check if serial number is marked as canceled or superseded
     if ( $params->{cancel}->contains($serial) ) {
@@ -549,7 +549,7 @@ sub save_alert_status
 sub process_alerts
 {
     my $class  = shift;
-    my $params = $class->params();
+    my $params = AlertGizmo::Config->params();
 
     # convert response JSON data to template-able result
     foreach my $raw_item ( @{ $params->{json} } ) {
@@ -612,29 +612,29 @@ sub pre_template
     my $class = shift;
 
     # initialize globals
-    $class->params( ["alerts"],    {} );
-    $class->params( ["cancel"],    Set::Tiny->new() );
-    $class->params( ["supersede"], Set::Tiny->new() );
+    AlertGizmo::Config->params( ["alerts"],    {} );
+    AlertGizmo::Config->params( ["cancel"],    Set::Tiny->new() );
+    AlertGizmo::Config->params( ["supersede"], Set::Tiny->new() );
 
     # clear destination symlink
-    my $outlink = AlertGizmo::Config->config_dir() . "/" . $OUTJSON;
-    $class->paths( ["outlink"], $outlink );
+    my $outlink = AlertGizmo::Config->_dir() . "/" . $OUTJSON;
+    AlertGizmo::Config->paths( ["outlink"], $outlink );
     if ( -e $outlink ) {
         if ( not -l $outlink ) {
             croak "destination file $outlink is not a symlink";
         }
     }
-    my $outjson = $outlink . "-" . $class->config_timestamp();
-    $class->paths( ["outjson"], $outjson );
+    my $outjson = $outlink . "-" . AlertGizmo::Config->timestamp();
+    AlertGizmo::Config->paths( ["outjson"], $outjson );
 
     # perform SWPC request
     $class->retrieve_url( $SWPC_JSON_URL );
 
     # read JSON into template data
     # in case of JSON error, allow these to crash the program here before proceeding to symlinks
-    my $json_path = $class->config_test_mode() ? $outlink : $outjson;
+    my $json_path = AlertGizmo::Config->test_mode() ? $outlink : $outjson;
     my $json_text = File::Slurp::read_file($json_path);
-    $class->params( ["json"], JSON::from_json $json_text );
+    AlertGizmo::Config->params( ["json"], JSON::from_json $json_text );
 
     # convert response JSON data to template-able result
     $class->process_alerts();
@@ -648,7 +648,7 @@ sub post_template
     my $class = shift;
 
     # make a symlink to new data
-    my $paths = $class->paths();
+    my $paths = AlertGizmo::Config->paths();
     if ( -l $paths->{outlink} ) {
         unlink $paths->{outlink};
     }
@@ -656,7 +656,7 @@ sub post_template
         or croak "failed to symlink " . $paths->{outlink} . " to " . $paths->{outjson} . "; $!";
 
     # clean up old data files
-    my $config_dir = AlertGizmo::Config->config_dir();
+    my $config_dir = AlertGizmo::Config->dir();
     opendir( my $dh, $config_dir )
         or croak "Can't open $config_dir: $!";
     my @datafiles = sort { $b cmp $a } grep { /^ $OUTJSON -/x } readdir $dh;

@@ -196,7 +196,7 @@ sub get_dist_km
 {
     my ( $class, $param_name, $raw_item ) = @_;
 
-    my $dist_au = $raw_item->[ $class->params( [ "fnum", $param_name ] ) ];
+    my $dist_au = $raw_item->[ AlertGizmo::Config->params( [ "fnum", $param_name ] ) ];
     my $dist_km = $dist_au * $KM_IN_AU;
     return int( $dist_km + 0.5 );
 }
@@ -217,14 +217,14 @@ sub get_diameter
     my ( $class, $raw_item ) = @_;
 
     # if diameter data was provided, use it
-    my $fnum_diameter = $class->params( [qw( fnum diameter )] );
+    my $fnum_diameter = AlertGizmo::Config->params( [qw( fnum diameter )] );
     if (    ( exists $raw_item->[$fnum_diameter] )
         and ( defined $raw_item->[$fnum_diameter] )
         and ( $raw_item->[$fnum_diameter] ne "null" ) )
     {
         # diameter data found - format it with or without diameter_sigma
         my $diameter            = "" . int( $raw_item->[ $fnum_diameter * 1000.0 ] + 0.5 );
-        my $fnum_diameter_sigma = $class->params( [qw( fnum diameter_sigma )] );
+        my $fnum_diameter_sigma = AlertGizmo::Config->params( [qw( fnum diameter_sigma )] );
         if (    ( exists $raw_item->[$fnum_diameter_sigma] )
             and ( defined $raw_item->[$fnum_diameter_sigma] )
             and ( $raw_item->[$fnum_diameter_sigma] ne "null" ) )
@@ -237,7 +237,7 @@ sub get_diameter
 
     # if magnitude data was provided, estimate diameter from it
     # according to API definition, h (absolute magnitude) should be provided
-    my $fnum_h = $class->params( [qw( fnum h )] );
+    my $fnum_h = AlertGizmo::Config->params( [qw( fnum h )] );
     if (    ( exists $raw_item->[$fnum_h] )
         and ( defined $raw_item->[$fnum_h] )
         and ( $raw_item->[$fnum_h] ne "null" ) )
@@ -257,81 +257,82 @@ sub pre_template
     my $class = shift;
 
     # compute query start date from $BACK_DAYS days ago
-    my $timestamp = $class->config_timestamp();
+    my $timestamp = AlertGizmo::Config->timestamp();
     my $start_date =
         $timestamp->clone()->set_time_zone('UTC')->subtract( days => $BACK_DAYS )->date();
-    $class->params( ["start_date"], $start_date );
+    AlertGizmo::Config->params( ["start_date"], $start_date );
     is_interactive() and say "start date: " . $start_date;
 
     # compute query end date from $AHEAD_DAYS days ago
     my $end_date =
         $timestamp->clone()->set_time_zone('UTC')->add( days => $AHEAD_DAYS )->date();
-    $class->params( ["end_date"], $end_date );
+    AlertGizmo::Config->params( ["end_date"], $end_date );
     is_interactive() and say "end date: " . $end_date;
 
     # clear destination symlink
-    $class->paths( [qw( outlink )], AlertGizmo::Config->config_dir() . "/" . $OUTJSON );
-    if ( -e $class->paths( [qw( outlink )] ) ) {
-        if ( not -l $class->paths( [qw( outlink )] ) ) {
-            croak "destination file " . $class->paths( [qw( outlink )] ) . " is not a symlink";
+    AlertGizmo::Config->paths( [qw( outlink )], AlertGizmo::Config->dir() . "/" . $OUTJSON );
+    if ( -e AlertGizmo::Config->paths( [qw( outlink )] ) ) {
+        if ( not -l AlertGizmo::Config->paths( [qw( outlink )] ) ) {
+            croak "destination file " . AlertGizmo::Config->paths( [qw( outlink )] ) . " is not a symlink";
         }
     }
-    $class->paths( [qw( outjson )],
-        $class->paths( [qw( outlink )] ) . "-" . $class->config_timestamp() );
+    AlertGizmo::Config->paths( [qw( outjson )],
+        AlertGizmo::Config->paths( [qw( outlink )] ) . "-" . AlertGizmo::Config->timestamp() );
 
     # perform NEO query
-    my $url = sprintf $NEO_API_URL, $class->params( ["start_date"] ), $class->params( ["end_date"] );
+    my $url = sprintf $NEO_API_URL, AlertGizmo::Config->params( ["start_date"] ),
+        AlertGizmo::Config->params( ["end_date"] );
     $class->retrieve_url( $url );
 
     # read JSON into template data
     # in case of JSON error, allow these to crash the program here before proceeding to symlinks
     my $json_path =
-          $class->config_test_mode()
-        ? $class->paths( [qw( outlink )] )
-        : $class->paths( [qw( outjson )] );
+          AlertGizmo::Config->test_mode()
+        ? AlertGizmo::Config->paths( [qw( outlink )] )
+        : AlertGizmo::Config->paths( [qw( outjson )] );
     my $json_text = File::Slurp::read_file($json_path);
-    $class->params( ["json"], JSON::from_json $json_text );
-    my $json_data = $class->params( [qw( json data )] );
+    AlertGizmo::Config->params( ["json"], JSON::from_json $json_text );
+    my $json_data = AlertGizmo::Config->params( [qw( json data )] );
 
     # check API version number
-    my $api_version = $class->params( [qw( json signature version )] );
+    my $api_version = AlertGizmo::Config->params( [qw( json signature version )] );
     if ( $api_version ne "1.5" ) {
         croak "API version changed to " . $api_version . " - code needs update to handle it";
     }
 
     # collect field names/numbers from JSON
-    $class->params( ["fnum"], {} );
-    my $fields_ref = $class->params( [qw( json fields )] );
+    AlertGizmo::Config->params( ["fnum"], {} );
+    my $fields_ref = AlertGizmo::Config->params( [qw( json fields )] );
     for ( my $fnum = 0 ; $fnum < scalar @$fields_ref ; $fnum++ ) {
-        $class->params( [ "fnum", $fields_ref->[$fnum] ], $fnum );
+        AlertGizmo::Config->params( [ "fnum", $fields_ref->[$fnum] ], $fnum );
     }
 
     # convert API results to template-able list
-    $class->params( ["neos"], [] );
-    my $neos_ref = $class->params( ["neos"] );
+    AlertGizmo::Config->params( ["neos"], [] );
+    my $neos_ref = AlertGizmo::Config->params( ["neos"] );
     foreach my $raw_item (@$json_data) {
 
         # start NEO record
         my %item;
-        $item{des}   = $raw_item->[ $class->params( [qw( fnum des )] ) ];
-        $item{cd}    = $raw_item->[ $class->params( [qw( fnum cd )] ) ];
-        $item{v_rel} = int( $raw_item->[ $class->params( [qw( fnum v_rel )] ) ] + 0.5 );
+        $item{des}   = $raw_item->[ AlertGizmo::Config->params( [qw( fnum des )] ) ];
+        $item{cd}    = $raw_item->[ AlertGizmo::Config->params( [qw( fnum cd )] ) ];
+        $item{v_rel} = int( $raw_item->[ AlertGizmo::Config->params( [qw( fnum v_rel )] ) ] + 0.5 );
 
         # distance computation
         foreach my $param_name (qw(dist dist_min dist_max)) {
-            $item{$param_name} = $class->get_dist_km( $param_name, $raw_item, $class->params() );
+            $item{$param_name} = $class->get_dist_km( $param_name, $raw_item, AlertGizmo::Config->params() );
         }
 
         # closest approact in local timezone (for mouseover text)
         my $cd_dt = DateTime::Format::Flexible->parse_datetime( $item{cd} . ":00 UTC" )
-            ->set_time_zone( $class->config_timezone() );
+            ->set_time_zone( AlertGizmo::Config->timezone() );
         $item{cd_local} = AlertGizmo::dt2dttz($cd_dt);
 
         # background color computation based on distance
         $item{bgcolor} = dist2bgcolor( $item{dist} );
 
         # diameter is not always known - must deal with missing or null values
-        $item{diameter} = $class->get_diameter( $raw_item, $class->params() );
+        $item{diameter} = $class->get_diameter( $raw_item, AlertGizmo::Config->params() );
 
         # cell background for diameter
         $item{diameter_bgcolor} = diameter2bgcolor( $item{diameter} );
@@ -352,16 +353,16 @@ sub post_template
     my $class = shift;
 
     # make a symlink to new data
-    if ( -l $class->paths( ["outlink"] ) ) {
-        unlink $class->paths( ["outlink"] );
+    if ( -l AlertGizmo::Config->paths( ["outlink"] ) ) {
+        unlink AlertGizmo::Config->paths( ["outlink"] );
     }
-    symlink basename( $class->paths( ["outjson"] ) ), $class->paths( ["outlink"] )
+    symlink basename( AlertGizmo::Config->paths( ["outjson"] ) ), AlertGizmo::Config->paths( ["outlink"] )
         or croak "failed to symlink "
-        . $class->paths( ["outlink"] ) . " to "
-        . $class->paths( ["outjson"] ) . ": $!";
+        . AlertGizmo::Config->paths( ["outlink"] ) . " to "
+        . AlertGizmo::Config->paths( ["outjson"] ) . ": $!";
 
     # clean up old data files
-    my $config_dir = AlertGizmo::Config->config_dir();
+    my $config_dir = AlertGizmo::Config->dir();
     opendir( my $dh, $config_dir )
         or croak "Can't open $config_dir: $!";
     my @datafiles = sort { $b cmp $a } grep { /^ $OUTJSON -/x } readdir $dh;
