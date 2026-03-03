@@ -617,7 +617,7 @@ sub pre_template
     AlertGizmo::Config->params( ["supersede"], Set::Tiny->new() );
 
     # clear destination symlink
-    my $outlink = AlertGizmo::Config->_dir() . "/" . $OUTJSON;
+    my $outlink = AlertGizmo::Config->dir() . "/" . $OUTJSON;
     AlertGizmo::Config->paths( ["outlink"], $outlink );
     if ( -e $outlink ) {
         if ( not -l $outlink ) {
