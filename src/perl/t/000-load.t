@@ -10,8 +10,11 @@ my @modules = qw(
     AlertGizmo
     AlertGizmo::Config
     AlertGizmo::Neo
+    AlertGizmo::Neo::Approach
+    AlertGizmo::Swpc
     AlertGizmo::Apod
     AlertGizmo::Postproc
+    AlertGizmo::Postproc::Image
 );
 
 # count tests
