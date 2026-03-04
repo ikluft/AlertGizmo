@@ -31,10 +31,12 @@ use AlertGizmo::Config;
 use AlertGizmo::Neo::Approach;
 
 # constants for AlertGizmo::Neo
+Readonly::Array my @CLI_OPTS      => ( "query_ld|ld:s" );
 Readonly::Scalar my $DAYS_BACK    => 15;
 Readonly::Scalar my $DAYS_AHEAD   => 60;
+Readonly::Scalar my $DEFAULT_LD   => 1.5;
 Readonly::Scalar my $NEO_API_URL  =>
-    "https://ssd-api.jpl.nasa.gov/cad.api?dist-max=1.5LD&sort=-date&diameter=true&date-min=%s&date-max=%s";
+    "https://ssd-api.jpl.nasa.gov/cad.api?dist-max=%3.1fLD&sort=-date&diameter=true&date-min=%s&date-max=%s";
 Readonly::Scalar my $OUTJSON      => "neo-data.json";
 Readonly::Scalar my $OUTBASE      => "close-approaches";
 Readonly::Scalar my $TEMPLATE     => $OUTBASE . ".tt";
@@ -92,6 +94,17 @@ sub pre_template
     AlertGizmo::Config->params( ["end_date"], $end_date );
     is_interactive() and say "end date: " . $end_date;
 
+    # set query lunar distance limit (query_ld)
+    my $query_ld = $DEFAULT_LD;
+    if ( AlertGizmo::Config->has( qw(params query_ld) )) {
+        $query_ld = AlertGizmo::Config->params( [ "query_ld" ] );
+    } elsif ( AlertGizmo::Config->has( qw(options query_ld) )) {
+        $query_ld = AlertGizmo::Config->options( [ "query_ld" ] );
+        AlertGizmo::Config->params( [ "query_ld" ], $query_ld );
+    } else {
+        AlertGizmo::Config->params( [ "query_ld" ], $query_ld );
+    }
+
     # clear destination symlink
     AlertGizmo::Config->paths( [qw( outlink )], AlertGizmo::Config->dir() . "/" . $OUTJSON );
     if ( -e AlertGizmo::Config->paths( [qw( outlink )] ) ) {
@@ -103,7 +116,9 @@ sub pre_template
         AlertGizmo::Config->paths( [qw( outlink )] ) . "-" . AlertGizmo::Config->timestamp() );
 
     # perform NEO query
-    my $url = sprintf $NEO_API_URL, AlertGizmo::Config->params( ["start_date"] ),
+    my $url = sprintf $NEO_API_URL,
+        $query_ld,
+        AlertGizmo::Config->params( ["start_date"] ),
         AlertGizmo::Config->params( ["end_date"] );
     $class->retrieve_url( $url );
 

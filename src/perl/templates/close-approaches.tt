@@ -15,7 +15,7 @@
             <table class="space-alert-table">
                 <thead>
                     <tr>
-                        <th colspan="5">Near-Earth Object (NEO) approaches &lt;1.5LD:
+                        <th colspan="5">Near-Earth Object (NEO) approaches &lt;[% query_ld %]LD:
                             [% start_date %] - [% end_date %]</th>
                     </tr>
                     <tr class="secondary">
