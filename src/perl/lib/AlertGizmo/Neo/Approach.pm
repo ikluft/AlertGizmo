@@ -1,4 +1,4 @@
-# AlertGizmo::Neo
+# AlertGizmo::Neo::Approach
 # ABSTRACT: Per-approach record data for AlertGizmo monitor for NASA JPL Near-Earth Object (NEO) passes
 # Copyright 2024-2026 by Ian Kluft
 
@@ -18,17 +18,17 @@ use feature      qw(say try);
 use builtin      qw(true false);
 use charnames    qw(:loose);
 use Carp qw(confess);
+use Readonly;
 use AlertGizmo::Config;
+use AlertGizmo::Neo::Hazard;
 use Data::Dumper;
 
-# contants for AlertGizmo::Neo::Approach;
+# contants for AlertGizmo::Neo::Approach
 Readonly::Scalar my $NEO_LINK_URL => "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=";
-Readonly::Scalar my $E_RADIUS     => 6378;
 Readonly::Scalar my $KM_IN_AU     => 1.4959787e+08;
 Readonly::Scalar my $UC_QMARK     => "\N{fullwidth question mark}";    # Unicode question mark
 Readonly::Scalar my $UC_NDASH     => "\N{en dash}";                    # Unicode dash
 Readonly::Scalar my $UC_PLMIN     => "\N{plus minus sign}";            # Unicode plus-minus sign
- 
 
 # instantiate new object
 # required parameter: hash ref with NEO/asteroid parameters from NASA JPL data
@@ -60,19 +60,13 @@ sub init
     # distance computation
     $self->get_dist_km( $raw_neo_ref, AlertGizmo::Config->params() );
 
-    # closest approact in local timezone (for mouseover text)
+    # closest approach in local timezone (for mouseover text)
     my $cd_dt = DateTime::Format::Flexible->parse_datetime( $self->{cd} . ":00 UTC" )
         ->set_time_zone( AlertGizmo::Config->timezone() );
     $self->{cd_local} = AlertGizmo::dt2dttz($cd_dt);
 
-    # background color computation based on distance
-    $self->{bgcolor} = dist2bgcolor( $self->{dist} );
-
-    # diameter is not always known - must deal with missing or null values
-    $self->get_diameter( $raw_neo_ref, AlertGizmo::Config->params() );
-
-    # cell background for diameter
-    $self->{diameter_bgcolor} = diameter2bgcolor( $self->{diameter} );
+    # compute hazards and display colors for NEO size, velocity and distance of closest approach
+    $self->check_hazards( $raw_neo_ref );
 
     # set URL for NASA JPL NEO web info on this NEO approach
     $self->{link} = $NEO_LINK_URL . URI::Escape::uri_escape_utf8( $self->{des} );
@@ -80,116 +74,22 @@ sub init
     return;
 }
 
-# internal computation for bgcolor for each table, called by dist2bgcolor()
-sub _dist2rgb
+# compute hazards and colors to display for NEO size, velocity and distance of closest approach
+sub check_hazards
 {
-    my $dist = shift;
+    my ( $self, $raw_neo_ref ) = @_;
 
-    # green for over 350000km
-    if ( $dist >= 350000 ) {
-        return ( 0, 255, 0 );
-    }
+    # diameter is not always known - must deal with missing or null values
+    $self->get_diameter( $raw_neo_ref );
 
-    # 150k-250k km -> ramp from green #00FF00 to yellow #FFFF00
-    if ( $dist >= 250000 ) {
-        my $ramp = 255 - int( ( $dist - 250000 ) / 100000 * 255 );
-        return ( $ramp, 255, 0 );
-    }
+    # instantiate hazard object which contains colors to display & priorities
+    $self->{hazard} = AlertGizmo::Neo::Hazard->new(
+        dist => [ $self->{min_dist}, $self->{dist}, $self->{max_dist} ],    # min/avg/max distance of closest approach
+        size => $self->{diameter},                                          # NEO diameter
+        vel => $self->{v_rel}                                               # relative velocity
+    );
 
-    # 50k-150k km -> ramp from yellow #7F7F00 to orange #7F5300
-    if ( $dist >= 150000 ) {
-        my $ramp = 165 + int( ( $dist - 150000 ) / 100000 * 91 );
-        return ( 255, $ramp, 0 );
-    }
-
-    # 50k-150k km -> ramp from orange #7F5300 to red #7F0000
-    if ( $dist >= 50000 ) {
-        my $ramp = int( ( $dist - 50000 ) / 100000 * 165 );
-        return ( 255, $ramp, 0 );
-    }
-
-    # surface-50000 km -> red bg
-    if ( $dist >= $E_RADIUS ) {
-        return ( 255, 0, 0 );
-    }
-
-    # less than surface -> BlueViolet bg (impact!)
-    return ( 138, 43, 226 );
-}
-
-# compute bgcolor for each table row based on NEO distance at closest approach
-sub dist2bgcolor
-{
-    # background color computation based on distance
-    my $dist_min_km = shift;
-    my ( $red, $green, $blue );
-
-    ( $red, $green, $blue ) = _dist2rgb($dist_min_km);
-
-    # return RGB string
-    return sprintf( "#%02X%02X%02X", $red, $green, $blue );
-}
-
-# internal computation for bgcolor for table cell, called by diameter2bgcolor()
-sub _diameter2rgb
-{
-    my $diameter_str = shift;
-
-    # deal with unknown diameter
-    if ( $diameter_str eq $UC_QMARK ) {
-        return ( 192, 192, 192 );
-    }
-
-    my $diameter;
-    if ( $diameter_str =~ /^ ( \d+ ) $UC_NDASH ( \d+ ) $/x ) {
-
-        # if an estimated range of diameters was provided, use the top end for the cell color
-        $diameter = int($2);
-    } else {
-
-        # otherwise use the initial integer as a median value
-        $diameter_str =~ s/[^\d] .*//x;
-        $diameter = int($diameter_str);
-    }
-
-    # green for under 20m
-    if ( $diameter <= 30 ) {
-        return ( 0, 255, 0 );
-    }
-
-    # 20-75m -> ramp from green #00FF00 to yellow #FFFF00
-    if ( $diameter <= 75 ) {
-        my $ramp = int( ( $diameter - 20 ) / 55 * 255 );
-        return ( $ramp, 255, 0 );
-    }
-
-    # 75-140m -> ramp from yellow #7F7F00 to orange #7F5300
-    if ( $diameter <= 140 ) {
-        my $ramp = 165 + int( ( $diameter - 75 ) / 65 * 91 );
-        return ( 255, $ramp, 0 );
-    }
-
-    # 140-1000m -> ramp from orange #7F5300 to red #7F0000
-    if ( $diameter <= 1000 ) {
-        my $ramp = int( ( $diameter - 140 ) / 860 * 165 );
-        return ( 255, $ramp, 0 );
-    }
-
-    # over 1000m -> red bg
-    return ( 255, 0, 0 );
-}
-
-# compute bgcolor for table cell based on NEO diameter
-sub diameter2bgcolor
-{
-    # background color computation based on distance
-    my $diameter_min_km = shift;
-    my ( $red, $green, $blue );
-
-    ( $red, $green, $blue ) = _diameter2rgb($diameter_min_km);
-
-    # return RGB string
-    return sprintf( "#%02X%02X%02X", $red, $green, $blue );
+    return;
 }
 
 # get distance as km (convert from AU)

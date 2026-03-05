@@ -11,6 +11,7 @@ my @modules = qw(
     AlertGizmo::Config
     AlertGizmo::Neo
     AlertGizmo::Neo::Approach
+    AlertGizmo::Neo::Hazard
     AlertGizmo::Swpc
     AlertGizmo::Apod
     AlertGizmo::Postproc
