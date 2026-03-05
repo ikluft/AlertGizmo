@@ -29,7 +29,7 @@
                 <tbody>
 
                 [% MACRO current_row BLOCK %]
-                <tr bgcolor="#00F0D0"><td colspan="5" class="text-center no-padding"><small><i>present time [% timestamp %]</i></small></td></tr>
+                <tr bgcolor="#60FFC0"><td colspan="5" class="text-center no-padding"><small><i>present time [% timestamp %]</i></small></td></tr>
                 [% END %]
                 [% FOREACH neo IN neos %]
                     [% IF ( loop.first || loop.prev.cd_local.is_future ) && neo.cd_local.is_past %]
