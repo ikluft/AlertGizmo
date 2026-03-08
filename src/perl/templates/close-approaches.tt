@@ -17,34 +17,34 @@
         <div class="space-alert-div">
             <table class="space-alert-table">
                 <thead>
-                    <tr>
-                        <th colspan="5">Near-Earth Object (NEO) approaches &lt;[% query_ld %]LD:
+                    <tr class="space-alert-row">
+                        <th class="space-alert-head" colspan="5">Near-Earth Object (NEO) approaches &lt;[% query_ld %]LD:
                             [% start_date %] - [% end_date %]</th>
                     </tr>
-                    <tr class="secondary">
-                        <th>designation</th>
-                        <th>closest<br/><small>UTC</small></th>
-                        <th>distance<br/><small>km</small</th>
-                        <th>velocity<br/><small>km/s</small</th>
-                        <th>diameter<br/><small>m</small</th>
+                    <tr class="space-alert-row secondary">
+                        <th class="space-alert-head">designation</th>
+                        <th class="space-alert-head">closest<br/><small>UTC</small></th>
+                        <th class="space-alert-head">distance<br/><small>km</small</th>
+                        <th class="space-alert-head">velocity<br/><small>km/s</small</th>
+                        <th class="space-alert-head">diameter<br/><small>m</small</th>
                     </tr>
                 </thead>
                 <tbody>
 
                 [% MACRO current_row BLOCK %]
-                <tr bgcolor="#60FFC0"><td colspan="5" class="text-center no-padding"><small><i>present time [% timestamp %]</i></small></td></tr>
+                <tr class="space-alert-row" bgcolor="#60FFC0"><td colspan="5" class="text-center space-alert-data"><small><i>present time [% timestamp %]</i></small></td></tr>
                 [% END %]
                 [% FOREACH neo IN neos %]
                     [% IF ( loop.first || loop.prev.cd_local.is_future ) && neo.cd_local.is_past %]
                     [% current_row %]
                     [% END %]
 
-                    <tr bgcolor="[% neo.hazard.color('max') %]">
-                    <td class="no-padding"><a href="[% neo.link %]">[% neo.des %]</a></td>
-                    <td class="no-padding" title="[% neo.cd_local %]">[% neo.cd %]</td>
-                    <td class="text-center no-padding" bgcolor="[% neo.hazard.color('dist') %]" title="[% neo.dist_min %] - [% neo.dist %] - [% neo.dist_max %]">[% neo.dist %]</td>
-                    <td class="text-center no-padding" bgcolor="[% neo.hazard.color('vel') %]">[% neo.v_rel %]</td>
-                    <td class="text-center no-padding" bgcolor="[% neo.hazard.color('size') %]">[% neo.diameter %]</td>
+                    <tr class="space-alert-row" bgcolor="[% neo.hazard.color('max') %]">
+                    <td class="space-alert-data"><a href="[% neo.link %]">[% neo.des %]</a></td>
+                    <td class="space-alert-data" title="[% neo.cd_local %]">[% neo.cd %]</td>
+                    <td class="text-center space-alert-data" bgcolor="[% neo.hazard.color('dist') %]" title="[% neo.dist_min %] - [% neo.dist %] - [% neo.dist_max %]">[% neo.dist %]</td>
+                    <td class="text-center space-alert-data" bgcolor="[% neo.hazard.color('vel') %]">[% neo.v_rel %]</td>
+                    <td class="text-center space-alert-data" bgcolor="[% neo.hazard.color('size') %]">[% neo.diameter %]</td>
                 </tr>[% END %]
                 [% IF neos.last.cd_local.is_future %]
                 [% current_row %]
@@ -52,15 +52,15 @@
 
                 </tbody>
                 <tfoot>
-                    <tr>
-                        <td colspan="3" class="no-padding no-border text-left">
+                    <tr class="space-alert-row">
+                        <td colspan="3" class="space-alert-data no-border text-left">
                             <small>
                                 <a href="[% footer.desc.0 %]" target="_blank">[% footer.desc.1 %]</a>
                                 via <a href="[% footer.script.0 %]" target="_blank">[% footer.script.1 %]</a>,
                                 by <a href="[% footer.author.0 %]" target="_blank">[% footer.author.1 %]</a>&nbsp;
                             </small>
                         </td>
-                        <td colspan="2" class="no-padding no-border text-right"><small>[% timestamp %]</small></td>
+                        <td colspan="2" class="space-alert-data no-border text-right"><small>[% timestamp %]</small></td>
                     </tr>
                 </tfoot>
             </table>

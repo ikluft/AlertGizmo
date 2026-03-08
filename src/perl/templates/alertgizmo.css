@@ -1,0 +1,63 @@
+h1, h2, h3 {
+    line-height: 1.1;
+    font-family: var(--sans-font);
+}
+
+th {
+    text-align: center;
+}
+
+.secondary {
+    font-size: 0.9rem;
+}
+
+.no-margin {
+    margin: 0;
+}
+
+.no-border {
+    border: 0;
+}
+
+.panel-frame {
+    background-color: #AAA;
+    height: 100vh;
+    width: 70vw;
+    float: left;
+    border: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.alert-frame{
+    float: left;
+    height: 50vh;
+    width: 33vw;
+    color: #000;
+    background-color: #AAA;
+    border: 0;
+    padding: 0;
+    margin: 0;
+}
+
+/* nested iframe should be full available size */
+.wrapped-frame{
+    height: 100vh;
+    width: 100vw;
+}
+
+.space-alert-table {
+    table-layout: auto;
+    margin: 0;
+    padding: 0;
+    border: 2px;
+    width: 100vw;
+}
+
+.space-alert-head {
+    padding: 1pt 0 1pt 0;
+}
+
+.space-alert-data {
+    padding: 1pt 0 1pt 0;
+}
