@@ -207,47 +207,47 @@ sub _diameter2color
 # divisions of colors and priorities are based on Feb 2026 summary of NASA JPL NEO approach database
 # mean/average NEO relative velocity: 10.57, std deviation: 5.09, min: 0.86, max: 42.92
 # This is interpreted as
-#   0-10: green, priority 0
-#   10-15: green-yellow, priority 0-3
-#   15-20: yellow-orange, priority 3-6
-#   20-25: orange-red, priority 6-9
-#   25+: red, priority 9
+#   0-15: green, priority 0
+#   15-25: green-yellow, priority 0-3
+#   25-35: yellow-orange, priority 3-6
+#   35-45: orange-red, priority 6-9
+#   45+: red, priority 9
 sub _vel2rgbp
 {
     my $vel = shift;
 
     # 25+ km/s: red, priority 9
-    if ( $vel > 25 ) {
+    if ( $vel > 45 ) {
         return ( 255, 0, 0, 9 );
     }
 
     # 20-25 km/s: orange #FF5300 to red #FF0000, priority 6-9
-    if ( $vel > 20 ) {
+    if ( $vel > 35 ) {
         return (
             255,
-            _ramp( $vel, 20, 25, 83, 0 ),
+            _ramp( $vel, 35, 45, 83, 0 ),
             0,
-            _ramp( $vel, 20, 25, 6, 9 )
+            _ramp( $vel, 35, 45, 6, 9 )
         );
     }
 
     # 15-20 km/s: yellow #FFFF00 to orange #FF5300, priority 3-6
-    if ( $vel > 15 ) {
+    if ( $vel > 25 ) {
         return (
             255,
-            _ramp( $vel, 15, 20, 255, 83 ),
+            _ramp( $vel, 25, 35, 255, 83 ),
             0,
-            _ramp( $vel, 15, 20, 3, 6 )
+            _ramp( $vel, 25, 35, 3, 6 )
         );
     }
 
     # 10-15 km/s: green #00FF00 to yellow #FFFF00, priority 0-3
-    if ( $vel > 10 ) {
+    if ( $vel > 15 ) {
         return (
-            _ramp( $vel, 10, 15, 0, 255 ),
+            _ramp( $vel, 15, 25, 0, 255 ),
             255,
             0,
-            _ramp( $vel, 10, 15, 0, 3 )
+            _ramp( $vel, 15, 25, 0, 3 )
         );
     }
 
