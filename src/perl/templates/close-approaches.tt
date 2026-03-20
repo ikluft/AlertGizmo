@@ -40,7 +40,8 @@
                     [% END %]
 
                     <tr class="space-alert-row" bgcolor="[% neo.hazard.color('max') %]">
-                    <td class="space-alert-data"><a href="[% neo.link %]">[% neo.des %]</a></td>
+                    <td class="space-alert-data"><a href="[% neo.link %]">[% neo.des %]</a>
+                    [% IF neo.hazard.has_remark() %] - [% neo.hazard.remark() %][% END %]</td>
                     <td class="space-alert-data" title="[% neo.cd_local %]">[% neo.cd %]</td>
                     <td class="text-center space-alert-data" bgcolor="[% neo.hazard.color('dist') %]" title="[% neo.dist_min %] - [% neo.dist %] - [% neo.dist_max %]">[% neo.dist %]</td>
                     <td class="text-center space-alert-data" bgcolor="[% neo.hazard.color('vel') %]">[% neo.v_rel %]</td>
