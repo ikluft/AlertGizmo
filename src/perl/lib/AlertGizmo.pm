@@ -193,6 +193,9 @@ sub net_get
     }
     AlertGizmo::Config->verbose() and say STDERR "net_get(" . $source . ")\n";
 
+    # set user agent
+    $File::Fetch::USER_AGENT = $class . "/" . $class->version();
+
     # unpack parameters if present
     my $file_path;
     if (( defined $params ) and ( ref $params eq "HASH" )) {
