@@ -26,6 +26,7 @@ use FindBin;
 use DateTime;
 use DateTime::Duration;
 use DateTime::Format::ISO8601;
+use DateTime::Format::Flexible;
 use Set::Tiny;
 use File::Slurp;
 use IO::Interactive qw(is_interactive);
@@ -36,6 +37,8 @@ use Data::Dumper;
 AlertGizmo::Config->config( ["msgid"], {} );
 
 # constants
+Readonly::Scalar my $ISO8601_DT_RE => qr(^ \d{4} - \d\d - \d\d T \d\d : \d\d : \d\d (\.\d+)? (([+-]\d\d:\d\d)|Z)? $)ix;
+Readonly::Scalar my $YMDHM_DT_RE    => qr(^ \d{4} - \d\d - \d\d \s+ \d\d : \d\d ? (([+-]\d\d:\d\d)|Z)? $)ix;
 Readonly::Scalar my $SWPC_JSON_URL => "https://services.swpc.noaa.gov/products/alerts.json";
 Readonly::Scalar my $OUTJSON       => "swpc-data.json";
 Readonly::Scalar my $OUTBASE       => "noaa-swpc-alerts";
@@ -114,21 +117,29 @@ sub footer_author
 sub datestr2dt
 {
     my ( $class, $date_str ) = @_;
-    my ( $year, $mon_str, $day, $time, $zone ) = split qr(\s+)x, $date_str;
-    if ( not exists $MONTH_NUM{ lc $mon_str } ) {
-        croak "bad month '$mon_str' in date";
+    my $dt;
+    if ( $date_str =~ $ISO8601_DT_RE ) {
+        # shortcut if date provided in ISO8601 format
+        $dt = DateTime::Format::ISO8601->parse_datetime($date_str);
+    } elsif ( $date_str =~ $YMDHM_DT_RE ) {
+        $dt = DateTime::Format::Flexible->parse_datetime($date_str);
+    } else {
+        my ( $year, $mon_str, $day, $time, $zone ) = split qr(\s+)x, $date_str;
+        if ( not exists $MONTH_NUM{ lc $mon_str } ) {
+            croak "bad month '" . ( $mon_str // "[undef]" ) . "' in date '" . ( $date_str // "[undef]" ) . "'";
+        }
+        my $mon  = int( $MONTH_NUM{ lc $mon_str } );
+        my $hour = int( substr( $time, 0, 2 ) );
+        my $min  = int( substr( $time, 2, 2 ) );
+        $dt   = DateTime->new(
+            year      => int($year),
+            month     => $mon,
+            day       => int($day),
+            hour      => $hour,
+            minute    => $min,
+            time_zone => $zone
+        );
     }
-    my $mon  = int( $MONTH_NUM{ lc $mon_str } );
-    my $hour = int( substr( $time, 0, 2 ) );
-    my $min  = int( substr( $time, 2, 2 ) );
-    my $dt   = DateTime->new(
-        year      => int($year),
-        month     => $mon,
-        day       => int($day),
-        hour      => $hour,
-        minute    => $min,
-        time_zone => $zone
-    );
     $dt->set_time_zone( AlertGizmo::Config->timezone() );    # convert to same time in selected time zone
     return $dt;
 }
@@ -426,14 +437,14 @@ sub compute_alert_range
 
     # set begin and expiration times based on various headers to that effect
     foreach my $begin_hdr (@BEGIN_HEADERS) {
-        if ( exists $item_ref->{msg_data}{$begin_hdr} ) {
+        if (( exists $item_ref->{msg_data}{$begin_hdr} ) and ( defined $item_ref->{msg_data}{$begin_hdr} )) {
             my $begin_dt = $class->datestr2dt( $item_ref->{msg_data}{$begin_hdr} );
             $item_ref->{derived}{begin} = DateTime::Format::ISO8601->format_datetime($begin_dt);
             last;
         }
     }
     foreach my $end_hdr (@END_HEADERS) {
-        if ( exists $item_ref->{msg_data}{$end_hdr} ) {
+        if (( exists $item_ref->{msg_data}{$end_hdr} ) and ( defined $item_ref->{msg_data}{$end_hdr} )) {
             my $end_dt = $class->datestr2dt( $item_ref->{msg_data}{$end_hdr} );
             $item_ref->{derived}{end} = DateTime::Format::ISO8601->format_datetime($end_dt);
 
@@ -443,7 +454,7 @@ sub compute_alert_range
 
     # set times for instantaneous events
     foreach my $instant_hdr (@INSTANTANEOUS_HEADERS) {
-        if ( exists $item_ref->{msg_data}{$instant_hdr} ) {
+        if (( exists $item_ref->{msg_data}{$instant_hdr} ) and ( defined $item_ref->{msg_data}{$instant_hdr} )) {
             my $tr_dt = $class->datestr2dt( $item_ref->{msg_data}{$instant_hdr} );
             $item_ref->{derived}{end}   = DateTime::Format::ISO8601->format_datetime($tr_dt);
             $item_ref->{derived}{begin} = $item_ref->{derived}{end};
