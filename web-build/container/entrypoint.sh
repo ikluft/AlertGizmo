@@ -23,7 +23,7 @@ echo start web build at "$(date)"
     || err_fail make web/data directory failed
 ( cd web/data && \
     ln -sf ../../src/perl/bin/*.pl . \
-    && ln -sf ../../src/perl/templates/*.tt . ) \
+    && ln -sf ../../src/perl/templates/*html.tt2 . ) \
     || err_fail symlink bin+template files failed
 ( web/data/pull-nasa-neo.pl --dir="$PWD/web/data" --tz="US/Pacific" \
     && web/data/pull-swpc-alerts.pl --dir="$PWD/web/data" --tz="US/Pacific" ) \

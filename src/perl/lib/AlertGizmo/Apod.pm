@@ -27,7 +27,7 @@ use File::Basename;
 Readonly::Scalar my $APOD_RSS_URL => "https://apod.nasa.gov/apod.rss";
 Readonly::Scalar my $RSS_XSL_STYLESHEET => "rss.xsl";
 Readonly::Scalar my $OUTBASE       => "apod-alerts";
-Readonly::Scalar my $TEMPLATE      => $OUTBASE . ".tt";
+Readonly::Scalar my $TEMPLATE      => $OUTBASE . ".html.tt2";
 
 # get APoD feed and save result in named file
 sub read_apod_feed

@@ -39,7 +39,7 @@ AlertGizmo::Config->config( ["msgid"], {} );
 Readonly::Scalar my $SWPC_JSON_URL => "https://services.swpc.noaa.gov/products/alerts.json";
 Readonly::Scalar my $OUTJSON       => "swpc-data.json";
 Readonly::Scalar my $OUTBASE       => "noaa-swpc-alerts";
-Readonly::Scalar my $TEMPLATE      => $OUTBASE . ".tt";
+Readonly::Scalar my $TEMPLATE      => $OUTBASE . ".html.tt2";
 Readonly::Scalar my $S_NONE        => "none";
 Readonly::Scalar my $S_ACTIVE      => "active";
 Readonly::Scalar my $S_INACTIVE    => "inactive";
@@ -165,7 +165,7 @@ sub parse_message
 
     # decode message text info further data fields
     $item_ref->{msg_data} = {};
-    my @msg_lines = split "\r\n", $item_ref->{message};
+    my @msg_lines = split / [\r\n]+ /x, $item_ref->{message};
     my $last_header;
     for ( my $line = 0 ; $line <= scalar @msg_lines ; $line++ ) {
         if ( ( not defined $msg_lines[$line] ) or ( length( $msg_lines[$line] ) == 0 ) ) {
@@ -362,7 +362,7 @@ sub test_dump
         my $params = AlertGizmo::Config->params();
         say STDERR 'test mode';
         say STDERR '* alert keys: ' . join( " ", sort keys %{ $params->{alerts} } );
-        say STDERR '* active ' . join( " ", @{ $params->{active} } );
+        say STDERR '* active ' . join( " ", @{ $params->{active} // [] } );
         say STDERR '* cancel: ' . join( " ", sort $params->{cancel}->elements() );
         say STDERR '* supersede: ' . join( " ", sort $params->{supersede}->elements() );
 
@@ -488,6 +488,13 @@ sub save_alert_status
     my $msgid     = $item_ref->{derived}{id};
     my $serial    = $item_ref->{msg_data}{$SERIAL_HEADER};
     my $timestamp = AlertGizmo::Config->timestamp();
+
+    # validate that message id is a hexadecimal number
+    if ( $msgid !~ / ^ [0-9a-z]{1-4} $ /ix ) {
+        # apparent bad data - do not display it
+        $class->alert_set_cancel($msgid);
+        return;
+    }
 
     # check if serial number is marked as canceled or superseded
     if ( $params->{cancel}->contains($serial) ) {

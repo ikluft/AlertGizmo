@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- vim: set filetype=tt2html ai ts=4 sw=4: -->
 <html lang="en">
     <head>
         <meta charset="UTF-8">
@@ -8,9 +9,8 @@
         <meta http-equiv="refresh" content="[% http_refresh %]">
         [% END %]
         [%- FOREACH path IN stylesheet %]
-
         <link rel="stylesheet" href="[% path %]">
-        [%- END -%]
+        [% END -%]
 
     </head>
     <body class="nogrid">

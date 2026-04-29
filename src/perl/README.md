@@ -27,15 +27,15 @@ Other classes in the distribution include the following:
   - *[pull-nasa-neo.pl](bin/pull-nasa-neo.pl)* reads NASA JPL data on Near Earth Object (NEO) asteroid close approaches to Earth, within 2 lunar distances (LD) and makes a table of upcoming events and recent ones within 15 days.
      - language: Perl5🧅
      - dependencies: AlertGizmo::Neo, [Template Toolkit](http://www.template-toolkit.org/)
-     - example template text: [close-approaches.tt](close-approaches.tt)
+     - example template text: [close-approaches.html.tt2](close-approaches.html.tt2)
   - *[pull-swpc-alerts.pl](bin/pull-swpc-alerts.pl)* reads NOAA Space Weather Prediction Center (SWPC) alerts for solar flares and aurora
      - language: Perl5🧅
      - dependencies: AlertGizmo::Swpc, [Template Toolkit](http://www.template-toolkit.org/)
-     - example template text: [noaa-swpc-alerts.tt](noaa-swpc-alerts.tt)
+     - example template text: [noaa-swpc-alerts.html.tt2](noaa-swpc-alerts.html.tt2)
   - *[pull-nasa-apod.pl](bin/pull-nasa-apod.pl)* reads NASA Astronomy Picture of the Day (APOD) feed (work in progress)
      - language: Perl5🧅
      - dependencies: AlertGizmo::Apod, [Template Toolkit](http://www.template-toolkit.org/)
-     - example template text: [nasa-apod-alerts.tt](nasa-apod-alerts.tt)
+     - example template text: [nasa-apod-alerts.html.tt2](nasa-apod-alerts.html.tt2)
 - lib (library directory)
   - AlertGizmo.pm - base class for AlertGizmo feed monitors
   - AlertGizmo/Config.pm - configuration data for AlertGizmo classes

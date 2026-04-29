@@ -1,4 +1,5 @@
 <!DOCTYPE html> [% USE HTML %]
+<!-- vim: set filetype=tt2html ai ts=4 sw=4: -->
 <html lang="en">
     <head>
         <meta charset="UTF-8">

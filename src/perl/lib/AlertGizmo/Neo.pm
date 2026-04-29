@@ -39,7 +39,7 @@ Readonly::Scalar my $NEO_API_URL  =>
     "https://ssd-api.jpl.nasa.gov/cad.api?dist-max=%3.1fLD&sort=-date&diameter=true&date-min=%s&date-max=%s";
 Readonly::Scalar my $OUTJSON      => "neo-data.json";
 Readonly::Scalar my $OUTBASE      => "close-approaches";
-Readonly::Scalar my $TEMPLATE     => $OUTBASE . ".tt";
+Readonly::Scalar my $TEMPLATE     => $OUTBASE . ".html.tt2";
 
 # get template path for this subclass
 # class method, required of AlertGizmo subclasses
