@@ -48,6 +48,11 @@ sub load_prox
 {
     if ( AlertGizmo::Config->has(qw(options postproc)) ) {
         my $postproc_path = AlertGizmo::Config->options( ["postproc"] );
+        if ( not -e $postproc_path and AlertGizmo::Config->has(qw(params output_dir)) ) {
+            # look for the postprocessing config with the output data
+            my $outdir = AlertGizmo::Config->params( ["output_dir"] );
+            $postproc_path = $outdir . "/" . $postproc_path;
+        }
         my @postproc_yaml = LoadFile( $postproc_path );
         AlertGizmo::Config->params( ["postprox"], \@postproc_yaml );
         return 1;
