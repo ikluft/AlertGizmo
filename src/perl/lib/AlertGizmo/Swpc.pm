@@ -490,9 +490,9 @@ sub save_alert_status
     my $timestamp = AlertGizmo::Config->timestamp();
 
     # validate that message id is a hexadecimal number
-    if ( $msgid !~ / ^ [0-9a-z]{1-4} $ /ix ) {
+    if ( $msgid !~ / ^ [0-9a-f]+ $ /ix ) {
         # apparent bad data - do not display it
-        $class->alert_set_cancel($msgid);
+        $class->alert_set_inactive($msgid);
         return;
     }
 
