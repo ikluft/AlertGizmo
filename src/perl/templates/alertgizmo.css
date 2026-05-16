@@ -53,3 +53,8 @@ th {
     border: 2px;
     width: 100vw;
 }
+
+.space-alert-data {
+    /* padding: 0; */
+    text-shadow: 1px 1px 1px lightgray, 0 0 4px white;
+}
