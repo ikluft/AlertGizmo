@@ -464,7 +464,7 @@ sub _init_max
         # if a nonzero impact probability exists, ignore everything else and use that color/priority
         $self->{max}{color} = $self->{dist}{color};
         $self->{max}{priority} = $self->{dist}{priority};
-        $self->{max}{remark} = sprintf( "impact %d%%", int( $self->{dist}{impacty} * 100 ));
+        $self->{max}{remark} = sprintf( "impact %d%%", int( $self->{dist}{impact} * 100 ));
     } else {
         # select maximum priority - no need for a loop with only 3 choices
         my $max_key = "dist";
