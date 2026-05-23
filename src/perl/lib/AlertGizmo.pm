@@ -204,6 +204,11 @@ sub net_get
         }
     }
 
+    # set fetch method blacklist, if configured
+    if ( AlertGizmo::Config->contains( "fetch_blacklist" )) {
+        $File::Fetch::BLACKLIST = AlertGizmo::Config->read_accessor( "fetch_blacklist" );
+    }
+
     # send request, capture response
     my $ff = File::Fetch->new( uri => $source );
     my $content;
