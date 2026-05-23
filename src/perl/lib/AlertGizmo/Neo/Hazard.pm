@@ -39,6 +39,7 @@ Readonly::Array  my @categories => qw(dist size vel);
 Readonly::Scalar my $E_RADIUS   => 6378;
 Readonly::Scalar my $UC_QMARK     => "\N{fullwidth question mark}";    # Unicode question mark
 Readonly::Scalar my $UC_NDASH     => "\N{en dash}";                    # Unicode dash
+Readonly::Scalar my $UC_PLMIN     => "\N{plus minus sign}";            # Unicode plus-minus sign
 
 #
 # utility functions
@@ -489,8 +490,25 @@ sub _init_max
 sub min_dist { my $self = shift; return $self->{dist}{param}[0] // $self->{dist}{param}[1]; }
 sub dist { my $self = shift; return $self->{dist}{param}[1]; }
 sub max_dist { my $self = shift; return $self->{dist}{param}[2] // $self->{dist}{param}[1]; }
-sub size { my $self = shift; return $self->{size}{param}; }
 sub vel { my $self = shift; return $self->{vel}{param}; }
+
+# get size/diameter with processing of ranges down to a middle value
+sub size
+{
+    my $self = shift;
+    my $size_data = $self->{size}{param};
+    if ( $size_data =~ /^ ( \d+ ) \s* $UC_PLMIN \s* \d+ /x ) {
+        return $1;
+    }
+    if ( $size_data =~ /^ ( \d+ ) \s* $UC_NDASH \s* ( \d+ ) /x ) {
+        return int(( $1 + $2 + 0.5 ) / 2 );
+    }
+    if ( $size_data eq $UC_QMARK ) {
+        # unknown diameter - we still need a number to pick hazard colors - use 5m until more data
+        return 5;
+    }
+    return $size_data;
+}
 
 # get display color by hazard category
 sub color
