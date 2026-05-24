@@ -1,6 +1,50 @@
+/* Format headers */
 h1, h2, h3 {
     line-height: 1.1;
     font-family: var(--sans-font);
+}
+
+h1 {
+    font-size: 3rem;
+}
+
+h2 {
+    font-size: 2.6rem;
+    margin-top: 3rem;
+}
+
+h3 {
+    font-size: 2rem;
+    margin-top: 3rem;
+}
+
+h4 {
+    font-size: 1.44rem;
+}
+
+h5 {
+    font-size: 1.15rem;
+}
+
+h6 {
+    font-size: 0.96rem;
+}
+
+p {
+    margin: 1.5rem 0;
+}
+
+h1.clear, h2.clear, h3.clear, h4.clear {
+    clear:both;
+}
+
+p.clear, li.clear {
+    clear:both;
+}
+
+/* Prevent long strings from overflowing container */
+p, h1, h2, h3, h4, h5, h6 {
+    overflow-wrap: break-word;
 }
 
 th {
@@ -19,6 +63,28 @@ th {
     border: 0;
 }
 
+/* panels and iframes */
+.panel-multipak {
+    height: 100vh;
+    width: 100vw;
+    float: left;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    color: #000;
+    background-color: #B7B09C;
+}
+
+iframe {
+    height: 100vh;
+    width: 100vw;
+    border: 0;
+    padding: 0;
+    overflow: hidden;
+    margin: 0;
+    float: left;
+}
+
 .panel-frame {
     background-color: #AAA;
     height: 100vh;
@@ -31,8 +97,6 @@ th {
 
 .alert-frame{
     float: left;
-    height: 50vh;
-    width: 33vw;
     color: #000;
     background-color: #AAA;
     border: 0;
@@ -46,6 +110,7 @@ th {
     width: 100vw;
 }
 
+/* alert table formatting */
 .space-alert-table {
     table-layout: auto;
     margin: 0;
