@@ -22,7 +22,7 @@ use Scalar::Util qw( blessed );
 use AlertGizmo::Config;
 use AlertGizmo::Postproc;
 use File::Basename;
-use File::Fetch;
+use HTTP::Tiny;
 use Template;
 use Template::Stash;
 use results;
@@ -38,6 +38,13 @@ use Exception::Class (
         alias       => 'throw_network_get',
         fields      => [ qw( client )],
         description => "Failed to access feed source",
+    },
+
+    'AlertGizmo::Exception::ServerUnavailable' => {
+        isa         => 'AlertGizmo::Exception',
+        alias       => 'throw_network_unavailable',
+        fields      => [ qw( client )],
+        description => "Network server unavailable",
     },
 
     'AlertGizmo::Exception::Postprox' => {
@@ -183,18 +190,16 @@ sub test_dump
 }
 
 # network access utility function provided for use by subclasses
-# originally based on WebFetch's get() method, modified to use File::Fetch instead
+# originally based on WebFetch's get() method, then modified to use File::Fetch
+# after File::Fetch became unreliable (using curl even if on blacklist), now switched to HTTP::Tiny
 sub net_get
 {
     my ( $class, $source, $params ) = @_;
 
     if ( not defined $source ) {
-        AlertGizmo::Exception::NetworkGet->throw( "net_get: URI/URL source parameter missing" );
+        throw_network_get ( "net_get: URI/URL source parameter missing" );
     }
     AlertGizmo::Config->verbose() and say STDERR "net_get(" . $source . ")\n";
-
-    # set user agent
-    $File::Fetch::USER_AGENT = $class . "/" . $class->version();
 
     # unpack parameters if present
     my $file_path;
@@ -204,34 +209,45 @@ sub net_get
         }
     }
 
-    # set fetch method blacklist, if configured
-    if ( AlertGizmo::Config->contains( "fetch_blacklist" )) {
-        $File::Fetch::BLACKLIST = AlertGizmo::Config->read_accessor( "fetch_blacklist" );
+    # initialize HTTP::Tiny client
+    my $timeout;
+    if ( AlertGizmo::Config->contains( "fetch_timeout" )) {
+        my $result = AlertGizmo::Config->read_accessor( "fetch_timeout" );
+        AlertGizmo::Config->verbose() and say STDERR "net_get: timeout = " . Dumper( $result );
+        if ( $result->is_ok() ) {
+            $timeout = $result->unwrap();
+        }
     }
+    my $user_agent = $class . "/" . $class->version();
+    my $http = HTTP::Tiny->new( ( agent => $user_agent, ( defined $timeout ) ? ( timeout => $timeout ) : () ) );
 
     # send request, capture response
-    my $ff = File::Fetch->new( uri => $source );
-    my $content;
-    $ff->fetch( to => \$content );
+    my $rc = $http->get( $source );
 
     # abort on failure
-    if ( $ff->error( false ) ) {
-        AlertGizmo::Exception::NetworkGet->throw( "The request received an error: " . $ff->error( true ) );
+    if ( not $rc->{success} ) {
+        # server downtime is out of our control - use specific exception so it can be quietly ignored
+        if ( $rc->{status} == 500 or $rc->{status} == 502 or $rc->{status} == 503 or $rc->{status} == 504 ) {
+            throw_network_unavailable ( "server unavailable ($rc->{status}): $rc->{reason}" );
+        }
+
+        # all other errors
+        throw_network_get ( "request received error $rc->{status}: $rc->{reason}" );
     }
 
     # write the content and return if a file path was specified
     if ( defined $file_path ) {
         open ( my $out_fh, ">", $file_path )
-            or AlertGizmo::Exception::NetworkGet->throw( "net_get: failed to save $file_path: $!" );
-        say $out_fh $content
-            or AlertGizmo::Exception::NetworkGet->throw( "net_get: failed to write to $file_path: $!" );
+            or throw_network_get ( "net_get: failed to save $file_path: $!" );
+        say $out_fh $rc->{content}
+            or throw_network_get ( "net_get: failed to write to $file_path: $!" );
         close $out_fh
-            or AlertGizmo::Exception::NetworkGet->throw( "net_get: failed to close $file_path: $!" );
+            or throw_network_get ( "net_get: failed to close $file_path: $!" );
         return;
     }
 
     # return the content if a file path was not specified
-    return $content;
+    return $rc->{content};
 }
 
 # perform network request for a URL and save result in named file
@@ -252,6 +268,9 @@ sub retrieve_url
         try {
             $class->net_get( $url, { file => $paths->{outjson} } );
         } catch ( $e ) {
+            if ( $e->isa( "AlertGizmo::Exception::ServerUnavailable" )) {
+                $e->rethrow();
+            }
             confess "failed to get URL ($url): " . $e;
         }
 
@@ -410,6 +429,10 @@ sub main
 
         # simple but a functional start until more specific exception-catching gets added
         if ( blessed $e ) {
+            if ( $e->isa('AlertGizmo::Exception::ServerUnavailable') ) {
+                # don't make noise about server timeouts or downtime - it happens
+                exit 0;
+            }
             if ( $e->isa('AlertGizmo::Config::Exception::NotFound') ) {
                 say "error: NotFound (name => " . $e->{name} . ")";
                 exit 1;
