@@ -67,7 +67,7 @@ Readonly::Array our @CLI_OPTIONS =>
     ( "dir:s", "verbose", "test|test_mode", "proxy:s", "timezone|tz:s", "postproc:s" );
 Readonly::Scalar our $WKHTMLTOIMAGE => which("wkhtmltoimage");
 Readonly::Scalar our $SUFFIX_HTML => ".html";
-Readonly::Array our @HTTP_SERVER_UNAVAILABLE => ( 500, 502, 503, 504, 599 );
+Readonly::Array our @HTTP_SERVER_UNAVAILABLE => ( 500, 502, 503, 504, 598, 599 );
 
 # return AlertGizmo (or subclass) version number
 sub version
