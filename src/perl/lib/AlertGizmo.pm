@@ -27,6 +27,7 @@ use Template;
 use Template::Stash;
 use results;
 use File::Which;
+use List::Util qw(any);
 use Data::Dumper;
 
 # exceptions/errors
@@ -66,6 +67,7 @@ Readonly::Array our @CLI_OPTIONS =>
     ( "dir:s", "verbose", "test|test_mode", "proxy:s", "timezone|tz:s", "postproc:s" );
 Readonly::Scalar our $WKHTMLTOIMAGE => which("wkhtmltoimage");
 Readonly::Scalar our $SUFFIX_HTML => ".html";
+Readonly::Array our @HTTP_SERVER_UNAVAILABLE => ( 500, 502, 503, 504, 599 );
 
 # return AlertGizmo (or subclass) version number
 sub version
@@ -226,8 +228,11 @@ sub net_get
 
     # abort on failure
     if ( not $rc->{success} ) {
+        AlertGizmo::Config->verbose() and say STDERR "net_get received error $rc->{status}: $rc->{reason}";
+
         # server downtime is out of our control - use specific exception so it can be quietly ignored
-        if ( $rc->{status} == 500 or $rc->{status} == 502 or $rc->{status} == 503 or $rc->{status} == 504 ) {
+        if ( any { $rc->{status} == $_ } @HTTP_SERVER_UNAVAILABLE ) {
+            AlertGizmo::Config->verbose() and say STDERR "net_get: throw network unavailable exception";
             throw_network_unavailable ( "server unavailable ($rc->{status}): $rc->{reason}" );
         }
 
