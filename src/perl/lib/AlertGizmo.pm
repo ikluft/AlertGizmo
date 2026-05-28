@@ -191,6 +191,38 @@ sub test_dump
     return;
 }
 
+# determine whether network errors occurred and which exception to throw
+sub net_get_process_err
+{
+    my $rc = shift;
+
+    # if error occurred, determine which exception to throw
+    if ( not $rc->{success} ) {
+        AlertGizmo::Config->verbose() and say STDERR "net_get received error $rc->{status}: $rc->{reason}";
+
+        # server downtime is out of our control - use specific exception so it can be quietly ignored
+        my @http_unavailable_codes = @HTTP_SERVER_UNAVAILABLE;
+        if ( AlertGizmo::Config->contains( "http_unavailable_codes" )) {
+            # handle configuration entry to recognize more codes as server-unavailable condition which can be ignored
+            my $result = AlertGizmo::Config->read_accessor( "http_unavailable_codes" );
+            if ( $result->is_ok() ) {
+                my $res_uw = $result->unwrap();
+                if ( ref $res_uw eq "ARRAY" ) {
+                    push @http_unavailable_codes, @$res_uw;
+                }
+            }
+        }
+        if ( any { $rc->{status} == $_ } @http_unavailable_codes ) {
+            AlertGizmo::Config->verbose() and say STDERR "net_get: throw network unavailable exception";
+            throw_network_unavailable ( "server unavailable ($rc->{status}): $rc->{reason}" );
+        }
+
+        # all other errors
+        throw_network_get ( "request received error $rc->{status}: $rc->{reason}" );
+    }
+    return;
+}
+
 # network access utility function provided for use by subclasses
 # originally based on WebFetch's get() method, then modified to use File::Fetch
 # after File::Fetch became unreliable (using curl even if on blacklist), now switched to HTTP::Tiny
@@ -226,19 +258,8 @@ sub net_get
     # send request, capture response
     my $rc = $http->get( $source );
 
-    # abort on failure
-    if ( not $rc->{success} ) {
-        AlertGizmo::Config->verbose() and say STDERR "net_get received error $rc->{status}: $rc->{reason}";
-
-        # server downtime is out of our control - use specific exception so it can be quietly ignored
-        if ( any { $rc->{status} == $_ } @HTTP_SERVER_UNAVAILABLE ) {
-            AlertGizmo::Config->verbose() and say STDERR "net_get: throw network unavailable exception";
-            throw_network_unavailable ( "server unavailable ($rc->{status}): $rc->{reason}" );
-        }
-
-        # all other errors
-        throw_network_get ( "request received error $rc->{status}: $rc->{reason}" );
-    }
+    # check for network errors - throws exception on failure
+    net_get_process_err( $rc );
 
     # write the content and return if a file path was specified
     if ( defined $file_path ) {
