@@ -21,8 +21,6 @@ use builtin      qw(true false);
 use Readonly;
 use Carp qw(croak);
 use File::Basename;
-use DateTime;
-use DateTime::Format::Flexible;
 use File::Slurp;
 use IO::Interactive qw(is_interactive);
 use JSON;
@@ -106,14 +104,14 @@ sub pre_template
     }
 
     # clear destination symlink
-    AlertGizmo::Config->paths( [qw( outlink )], AlertGizmo::Config->dir() . "/" . $OUTJSON );
-    if ( -e AlertGizmo::Config->paths( [qw( outlink )] ) ) {
-        if ( not -l AlertGizmo::Config->paths( [qw( outlink )] ) ) {
-            croak "destination file " . AlertGizmo::Config->paths( [qw( outlink )] ) . " is not a symlink";
+    AlertGizmo::Config->runtime( [qw( outlink )], AlertGizmo::Config->dir() . "/" . $OUTJSON );
+    if ( -e AlertGizmo::Config->runtime( [qw( outlink )] ) ) {
+        if ( not -l AlertGizmo::Config->runtime( [qw( outlink )] ) ) {
+            croak "destination file " . AlertGizmo::Config->runtime( [qw( outlink )] ) . " is not a symlink";
         }
     }
-    AlertGizmo::Config->paths( [qw( outjson )],
-        AlertGizmo::Config->paths( [qw( outlink )] ) . "-" . AlertGizmo::Config->timestamp() );
+    AlertGizmo::Config->runtime( [qw( outjson )],
+        AlertGizmo::Config->runtime( [qw( outlink )] ) . "-" . AlertGizmo::Config->timestamp() );
 
     # perform NEO query
     my $url = sprintf $NEO_API_URL,
@@ -126,8 +124,8 @@ sub pre_template
     # in case of JSON error, allow these to crash the program here before proceeding to symlinks
     my $json_path =
           AlertGizmo::Config->test_mode()
-        ? AlertGizmo::Config->paths( [qw( outlink )] )
-        : AlertGizmo::Config->paths( [qw( outjson )] );
+        ? AlertGizmo::Config->runtime( [qw( outlink )] )
+        : AlertGizmo::Config->runtime( [qw( outjson )] );
     my $json_text = File::Slurp::read_file($json_path);
     AlertGizmo::Config->params( ["json"], JSON::from_json $json_text );
     my $json_data = AlertGizmo::Config->params( [qw( json data )] );
@@ -163,13 +161,13 @@ sub post_template
     my $class = shift;
 
     # make a symlink to new data
-    if ( -l AlertGizmo::Config->paths( ["outlink"] ) ) {
-        unlink AlertGizmo::Config->paths( ["outlink"] );
+    if ( -l AlertGizmo::Config->runtime( ["outlink"] ) ) {
+        unlink AlertGizmo::Config->runtime( ["outlink"] );
     }
-    symlink basename( AlertGizmo::Config->paths( ["outjson"] ) ), AlertGizmo::Config->paths( ["outlink"] )
+    symlink basename( AlertGizmo::Config->runtime( ["outjson"] ) ), AlertGizmo::Config->runtime( ["outlink"] )
         or croak "failed to symlink "
-        . AlertGizmo::Config->paths( ["outlink"] ) . " to "
-        . AlertGizmo::Config->paths( ["outjson"] ) . ": $!";
+        . AlertGizmo::Config->runtime( ["outlink"] ) . " to "
+        . AlertGizmo::Config->runtime( ["outjson"] ) . ": $!";
 
     # clean up old data files
     my $config_dir = AlertGizmo::Config->dir();

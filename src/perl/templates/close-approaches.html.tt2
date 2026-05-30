@@ -32,7 +32,7 @@
                 <tbody>
 
                 [% MACRO current_row BLOCK %]
-                <tr class="space-alert-row" bgcolor="#60FFC0"><td colspan="5" class="text-center space-alert-data"><small><i>present time [% timestamp %]</i></small></td></tr>
+                <tr class="space-alert-row" bgcolor="#60FFC0"><td colspan="5" class="text-center space-alert-data"><small><i>present time [% timestamp.tz_adjust %]</i></small></td></tr>
                 [% END %]
                 [% FOREACH neo IN neos %]
                     [% IF ( loop.first || loop.prev.cd_local.is_future ) && neo.cd_local.is_past %]
@@ -42,7 +42,7 @@
                     <tr class="space-alert-row" bgcolor="[% neo.hazard.color('max') %]">
                     <td class="space-alert-data"><a href="[% neo.link %]">[% neo.des %]</a>
                     [% IF neo.hazard.has_remark() %] - [% neo.hazard.remark() %][% END %]</td>
-                    <td class="space-alert-data" title="[% neo.cd_local %]">[% neo.cd %]</td>
+                    <td class="space-alert-data" title="[% neo.cd_local.tz_adjust %]">[% neo.cd %]</td>
                     <td class="text-center space-alert-data" bgcolor="[% neo.hazard.color('dist') %]" title="[% neo.dist_min %] - [% neo.dist %] - [% neo.dist_max %]">[% neo.dist %]</td>
                     <td class="text-center space-alert-data" bgcolor="[% neo.hazard.color('vel') %]">[% neo.v_rel %]</td>
                     <td class="text-center space-alert-data" bgcolor="[% neo.hazard.color('size') %]">[% neo.diameter %]</td>
@@ -61,7 +61,7 @@
                                 by <a href="[% footer.author.0 %]" target="_blank">[% footer.author.1 %]</a>&nbsp;
                             </small>
                         </td>
-                        <td colspan="2" class="space-alert-data no-border text-right"><small>[% timestamp %]</small></td>
+                        <td colspan="2" class="space-alert-data no-border text-right"><small>[% timestamp.tz_adjust %]</small></td>
                     </tr>
                 </tfoot>
             </table>

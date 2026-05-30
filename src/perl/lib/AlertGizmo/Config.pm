@@ -320,8 +320,6 @@ sub _str_is_int
 # external interface & wrappers
 #
 
-# begin TODO
-
 # wrapper for AlertGizmo::Config read/write accessor
 sub config
 {
@@ -374,12 +372,12 @@ sub params
     return $instance->config( [ "params", @{ $keys_ref // [] } ], $value );
 }
 
-# accessor wrapper for paths top-level config
-sub paths
+# accessor wrapper for runtime top-level config
+sub runtime
 {
     my ( $class_or_obj, $keys_ref, $value ) = @_;
     my $instance = _class_or_obj($class_or_obj);
-    return $instance->config( [ "paths", @{ $keys_ref // [] } ], $value );
+    return $instance->config( [ "runtime", @{ $keys_ref // [] } ], $value );
 }
 
 # accessor for test mode config
@@ -404,11 +402,26 @@ sub timezone
     my $class_or_obj = shift;
     my $instance = _class_or_obj($class_or_obj);
 
-    if ( $instance->has(qw(params timezone)) ) {
-        return $instance->params( ["timezone"] );
+    # get timezone from runtime-override value if present (supports separate template pass for each tz hour offset)
+    if ( $instance->has(qw(runtime timezone)) ) {
+        return $instance->runtime( ["timezone"] );
     }
+
+    # get timezone from YAML configuration or value cached in earlier processing of command-line options
+    if ( $instance->has(qw(params timezone)) ) {
+        my $tz_param = $instance->params( ["timezone"] );
+        if ( $tz_param eq "all" ) {
+            $tz_param = "UTC";  # we can get this when called from initialization code - use UTC instead of "all"
+        }
+        return $tz_param;
+    }
+
+    # get timezone from command-line options, and cache it for future queries
     my $tz = $instance->options( ["timezone"] )
         // "UTC";    # get TZ value from CLI options or default UTC
+    if ( $tz eq "all" ) {
+        $tz = "UTC";  # we can get this when called from initialization code - use UTC instead of "all"
+    }
     $instance->params( ["timezone"], $tz );    # save to template params
     return $tz;                             # and return value to caller
 }
@@ -445,8 +458,6 @@ sub timestamp
     $instance->params( ["timestamp"], DateTime::Format::ISO8601->format_datetime( $timestamp_obj ) );
     return $timestamp_obj;
 }
-
-# end TODO
 
 # class method: read-accessor for output directory config
 sub dir
@@ -510,7 +521,7 @@ sub init
     # initialize class static variables
     $instance->config( ["options"], {} );
     $instance->config( ["params"],  {} );
-    $instance->config( ["paths"],   {} );
+    $instance->config( ["runtime"],   {} );
     $instance->config( ["postproc"],   {} );
 
     # read CLI options into config[options]
@@ -536,8 +547,9 @@ sub params_yaml_dump
 {
     my ( $class_or_obj, $basename_yaml ) = @_;
     my $instance = _class_or_obj($class_or_obj);
+    my $offset_str = $instance->runtime( ["offset_str"] ) // ""; # for multiple timezone template runs
 
-    my $out_yaml = $instance->dir() . "/" . $basename_yaml . $SUFFIX_YAML;
+    my $out_yaml = $instance->dir() . "/" . $basename_yaml . $offset_str . $SUFFIX_YAML;
     YAML::DumpFile($out_yaml, $instance->read_accessor( qw(params) )->unwrap());
     return $out_yaml;
 }

@@ -22,6 +22,7 @@ use Scalar::Util qw( blessed );
 use AlertGizmo::Config;
 use AlertGizmo::Postproc;
 use File::Basename;
+use DateTime::Format::ISO8601;
 use HTTP::Tiny;
 use Template;
 use Template::Stash;
@@ -123,6 +124,28 @@ sub vmethod_is_past
     return $time_obj <= $run_timestamp;
 }
 
+# template virtual method: tz_adjust
+# template usage: scalar_var.tz_adjust
+# return time zone-adjusted ISO8601 time string
+sub vmethod_tz_adjust
+{
+    my $time_str = shift;
+    my $time_obj = AlertGizmo::Config::parse_timestamp( $time_str );
+    my $tz = AlertGizmo::Config->runtime( ["timezone"] )
+        // AlertGizmo::Config->options( ["timezone"] )
+        // AlertGizmo::Config->params( ["timezone"] );
+    if ( not defined $tz ) {
+        return $time_str;
+    }
+    if ( $tz eq "all" ) {
+        $tz = "UTC";
+    }
+    $time_obj->set_time_zone( $tz );
+    return DateTime::Format::ISO8601->format_datetime( $time_obj );
+
+}
+
+
 # class method to set the subclass it was called as to provide the implementation for this run
 sub set_class
 {
@@ -174,21 +197,6 @@ sub gen_class_name
         croak "error: $subclassname is not a subclass of " . __PACKAGE__;
     }
     return $subclassname;
-}
-
-# in test mode, dump program status for debugging
-# This may be overridden by subclasses to display more specific dump info.
-# In test mode it must exit after displaying the dump, as this does, and not proceed to network access.
-sub test_dump
-{
-    my $class = shift;
-
-    # in test mode, exit before messing with symlink or removing old files
-    if ( AlertGizmo::Config->test_mode() ) {
-        say STDERR "test mode: params=" . Dumper( AlertGizmo::Config->params() );
-        exit 0;
-    }
-    return;
 }
 
 # determine whether network errors occurred and which exception to throw
@@ -281,18 +289,18 @@ sub net_get
 sub retrieve_url
 {
     my ( $class, $url ) = @_;
-    my $paths = AlertGizmo::Config->paths();
+    my $runtime = AlertGizmo::Config->runtime();
 
     # perform network request
     if ( AlertGizmo::Config->test_mode() ) {
-        if ( not -e $paths->{outlink} ) {
-            croak "test mode requires $paths->{outlink} to exist";
+        if ( not -e $runtime->{outlink} ) {
+            croak "test mode requires $runtime->{outlink} to exist";
         }
         say STDERR "*** skip network access in test mode ***";
     } else {
         my $proxy = AlertGizmo::Config->proxy();
         try {
-            $class->net_get( $url, { file => $paths->{outjson} } );
+            $class->net_get( $url, { file => $runtime->{outjson} } );
         } catch ( $e ) {
             if ( $e->isa( "AlertGizmo::Exception::ServerUnavailable" )) {
                 $e->rethrow();
@@ -301,8 +309,8 @@ sub retrieve_url
         }
 
         # check results of request
-        if ( -z $paths->{outjson} ) {
-            croak "JSON data file " . $paths->{outjson} . " is empty";
+        if ( -z $runtime->{outjson} ) {
+            croak "JSON data file " . $runtime->{outjson} . " is empty";
         }
     }
     return;
@@ -381,6 +389,49 @@ sub _init_params
     };
 }
 
+# process template with input data to generate an output file
+# usually called only once, but can be called 27 times if timezone is set to "all"
+# (Why 27 and not 24? Time zone offsets overlap each way at the Date Line. Each offset gets a run.)
+sub _process_template
+{
+    my $class = shift;
+    my $offset_str = AlertGizmo::Config->runtime( ["offset_str"] ) // ""; # for multiple timezone template runs 
+
+    # process template
+    my $template_config = {
+        INCLUDE_PATH => AlertGizmo::Config->dir(),
+        INTERPOLATE  => 1,                      # expand "$var" in plain text
+        POST_CHOMP   => 1,                      # cleanup whitespace
+        EVAL_PERL    => 0,                      # evaluate Perl code blocks
+    };
+    my $template = Template->new($template_config);
+    my $path_out_base = $class->path_out_base();
+    my $gen_path_out_html = AlertGizmo::Config->dir() . "/" . $path_out_base . $offset_str . $SUFFIX_HTML;
+    $template->process(
+        $class->path_template(),
+        AlertGizmo::Config->params(),
+        $gen_path_out_html,
+        binmode => ':utf8'
+    ) or croak "template processing error: " . $template->error();
+    $class->log_generated_file( "path" => $gen_path_out_html, "filetype" => "html" );
+
+    # generate a YAML copy of the same params made available to the templater, for formatting by other software
+    my $gen_path_out_yaml = AlertGizmo::Config->params_yaml_dump( $path_out_base );
+    $class->log_generated_file( "path" => $gen_path_out_yaml, "filetype" => "yaml" );
+
+    # in test mode, return before messing with symlink or removing old files
+    if ( AlertGizmo::Config->test_mode() ) {
+        return;
+    }
+
+    # subclass-specific processing for after template
+    if ( $class->can("post_template") ) {
+        $class->post_template();
+    }
+
+    return;
+}
+
 # inner mainline called from main() exception-catching wrapper
 sub main_inner
 {
@@ -396,6 +447,7 @@ sub main_inner
     # register template vmethods
     Template::Stash->define_vmethod( "scalar", "is_future", \&vmethod_is_future );
     Template::Stash->define_vmethod( "scalar", "is_past", \&vmethod_is_past );
+    Template::Stash->define_vmethod( "scalar", "tz_adjust", \&vmethod_tz_adjust );
 
     # subclass-specific processing for before template
     if ( $class->can("pre_template") ) {
@@ -403,33 +455,24 @@ sub main_inner
     }
 
     # process template
-    my $template_config = {
-        INCLUDE_PATH => AlertGizmo::Config->dir(),
-        INTERPOLATE  => 1,                      # expand "$var" in plain text
-        POST_CHOMP   => 1,                      # cleanup whitespace
-        EVAL_PERL    => 0,                      # evaluate Perl code blocks
-    };
-    my $template = Template->new($template_config);
-    my $path_out_base = $class->path_out_base();
-    my $gen_path_out_html = AlertGizmo::Config->dir() . "/" . $path_out_base . $SUFFIX_HTML;
-    $template->process(
-        $class->path_template(),
-        AlertGizmo::Config->params(),
-        $gen_path_out_html,
-        binmode => ':utf8'
-    ) or croak "template processing error: " . $template->error();
-    $class->log_generated_file( "path" => $gen_path_out_html, "filetype" => "html" );
-
-    # generate a YAML copy of the same params made available to the templater, for formatting by other software
-    my $gen_path_out_yaml = AlertGizmo::Config->params_yaml_dump( $path_out_base );
-    $class->log_generated_file( "path" => $gen_path_out_yaml, "filetype" => "yaml" );
-
-    # in test mode, exit before messing with symlink or removing old files
-    $class->test_dump();
-
-    # subclass-specific processing for after template
-    if ( $class->can("post_template") ) {
-        $class->post_template();
+    # usually done only once, but can be 27 times if timezone is set to "all"
+    # (Why 27 and not 24? Time zone offsets overlap each way at the Date Line. Each offset gets a run.)
+    my $tz_option = AlertGizmo::Config->options( ["timezone"] )
+        // AlertGizmo::Config->params( ["timezone"] )
+        // "UTC";
+    if ( $tz_option eq "all" ) {
+        foreach my $offset ( -12 .. -1, 0, 1 .. 14 ) {
+            #my $offset_str = sprintf "%s%02d", $offset<0 ? "-" : "+", abs($offset);
+            my $offset_str = sprintf "%+03d", $offset;
+            #my $tz_str = ( $offset == 0 ) ? "UTC" : sprintf "GMT%+d", abs($offset);
+            my $tz_str = ( $offset == 0 ) ? "UTC" : sprintf "%+03d00", $offset;
+            AlertGizmo::Config->verbose() and say STDERR "main_inner: run offset_str=$offset_str tz_str=$tz_str";
+            AlertGizmo::Config->runtime( ["offset_str"], $offset_str );
+            AlertGizmo::Config->runtime( ["timezone"], $tz_str );
+            $class->_process_template();
+        }
+    } else {
+        $class->_process_template();
     }
 
     # use configuration file for post-processing controls, if provided

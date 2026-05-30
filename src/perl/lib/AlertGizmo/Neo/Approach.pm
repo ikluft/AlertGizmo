@@ -19,6 +19,7 @@ use builtin      qw(true false);
 use charnames    qw(:loose);
 use Carp qw(confess);
 use Readonly;
+use DateTime::Format::Flexible;
 use AlertGizmo::Config;
 use AlertGizmo::Neo::Hazard;
 use Data::Dumper;

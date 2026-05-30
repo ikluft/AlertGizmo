@@ -636,14 +636,14 @@ sub pre_template
 
     # clear destination symlink
     my $outlink = AlertGizmo::Config->dir() . "/" . $OUTJSON;
-    AlertGizmo::Config->paths( ["outlink"], $outlink );
+    AlertGizmo::Config->runtime( ["outlink"], $outlink );
     if ( -e $outlink ) {
         if ( not -l $outlink ) {
             croak "destination file $outlink is not a symlink";
         }
     }
     my $outjson = $outlink . "-" . AlertGizmo::Config->timestamp();
-    AlertGizmo::Config->paths( ["outjson"], $outjson );
+    AlertGizmo::Config->runtime( ["outjson"], $outjson );
 
     # perform SWPC request
     $class->retrieve_url( $SWPC_JSON_URL );
@@ -666,12 +666,12 @@ sub post_template
     my $class = shift;
 
     # make a symlink to new data
-    my $paths = AlertGizmo::Config->paths();
-    if ( -l $paths->{outlink} ) {
-        unlink $paths->{outlink};
+    my $runtime = AlertGizmo::Config->runtime();
+    if ( -l $runtime->{outlink} ) {
+        unlink $runtime->{outlink};
     }
-    symlink basename( $paths->{outjson} ), $paths->{outlink}
-        or croak "failed to symlink " . $paths->{outlink} . " to " . $paths->{outjson} . "; $!";
+    symlink basename( $runtime->{outjson} ), $runtime->{outlink}
+        or croak "failed to symlink " . $runtime->{outlink} . " to " . $runtime->{outjson} . "; $!";
 
     # clean up old data files
     my $config_dir = AlertGizmo::Config->dir();
