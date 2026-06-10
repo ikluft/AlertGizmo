@@ -29,10 +29,11 @@ use AlertGizmo::Config;
 use AlertGizmo::Neo::Approach;
 
 # constants for AlertGizmo::Neo
-Readonly::Array my @CLI_OPTS      => ( "query_ld|ld:s" );
-Readonly::Scalar my $DAYS_BACK    => 15;
-Readonly::Scalar my $DAYS_AHEAD   => 60;
-Readonly::Scalar my $DEFAULT_LD   => 1.5;
+Readonly::Array my @CLI_OPTS            => ( "query_ld|ld:s", "query_ahead|ahead:i", "query_back|back:i" );
+Readonly::Scalar my $DEFAULT_DAYS_BACK  => 30;      # query limit days in the past
+Readonly::Scalar my $DEFAULT_DAYS_AHEAD => 90;      # query limit days in the future
+Readonly::Scalar my $DEFAULT_LD         => 1.5;     # query limit of closest approach in lunar distances (LD)
+
 Readonly::Scalar my $NEO_API_URL  =>
     "https://ssd-api.jpl.nasa.gov/cad.api?dist-max=%3.1fLD&sort=-date&diameter=true&date-min=%s&date-max=%s";
 Readonly::Scalar my $OUTJSON      => "neo-data.json";
@@ -74,34 +75,47 @@ sub footer_author
     return ( "https://ikluft.github.io/", "Ian Kluft" );
 }
 
+# get query parameters from config or CLI options
+sub query_param
+{
+    my ( $param_name, $default ) = @_;
+
+    my $result = $default;
+    if ( AlertGizmo::Config->has( "params", $param_name )) {
+        $result = AlertGizmo::Config->params( [ $param_name ] );
+    } elsif ( AlertGizmo::Config->has( "options", $param_name )) {
+        $result = AlertGizmo::Config->options( [ $param_name ] );
+        AlertGizmo::Config->params( [ $param_name ], $result );
+    } else {
+        AlertGizmo::Config->params( [ $param_name ], $result );
+    }
+    return $result;
+}
+
 # class method AlertGizmo (parent) calls before template processing
 sub pre_template
 {
     my $class = shift;
 
-    # compute query start date from $DAYS_BACK days ago
+    # set query days ahead and back
+    my $query_ahead = query_param( "query_ahead", $DEFAULT_DAYS_AHEAD );
+    my $query_back = query_param( "query_back", $DEFAULT_DAYS_BACK );
+
+    # compute query start date from $query_back days ago
     my $timestamp = AlertGizmo::Config->timestamp();
     my $start_date =
-        $timestamp->clone()->set_time_zone('UTC')->subtract( days => $DAYS_BACK )->date();
+        $timestamp->clone()->set_time_zone('UTC')->subtract( days => $query_back )->date();
     AlertGizmo::Config->params( ["start_date"], $start_date );
     is_interactive() and say "start date: " . $start_date;
 
-    # compute query end date from $DAYS_AHEAD days ago
+    # compute query end date from $query_ahead days ago
     my $end_date =
-        $timestamp->clone()->set_time_zone('UTC')->add( days => $DAYS_AHEAD )->date();
+        $timestamp->clone()->set_time_zone('UTC')->add( days => $query_ahead )->date();
     AlertGizmo::Config->params( ["end_date"], $end_date );
     is_interactive() and say "end date: " . $end_date;
 
     # set query lunar distance limit (query_ld)
-    my $query_ld = $DEFAULT_LD;
-    if ( AlertGizmo::Config->has( qw(params query_ld) )) {
-        $query_ld = AlertGizmo::Config->params( [ "query_ld" ] );
-    } elsif ( AlertGizmo::Config->has( qw(options query_ld) )) {
-        $query_ld = AlertGizmo::Config->options( [ "query_ld" ] );
-        AlertGizmo::Config->params( [ "query_ld" ], $query_ld );
-    } else {
-        AlertGizmo::Config->params( [ "query_ld" ], $query_ld );
-    }
+    my $query_ld = query_param( "query_ld", $DEFAULT_LD );
 
     # clear destination symlink
     AlertGizmo::Config->runtime( [qw( outlink )], AlertGizmo::Config->dir() . "/" . $OUTJSON );
@@ -138,7 +152,7 @@ sub pre_template
 
     # collect field names/numbers from JSON
     AlertGizmo::Config->params( ["fnum"], {} );
-    my $fields_ref = AlertGizmo::Config->params( [qw( json fields )] );
+    my $fields_ref = AlertGizmo::Config->params( [qw( json fields )] ) // {};
     for ( my $fnum = 0 ; $fnum < scalar @$fields_ref ; $fnum++ ) {
         AlertGizmo::Config->params( [ "fnum", $fields_ref->[$fnum] ], $fnum );
     }
