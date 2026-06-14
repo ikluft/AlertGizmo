@@ -29,7 +29,7 @@ use AlertGizmo::Config;
 use AlertGizmo::Neo::Approach;
 
 # constants for AlertGizmo::Neo
-Readonly::Array my @CLI_OPTS            => ( "query_ld|ld:s", "query_ahead|ahead:i", "query_back|back:i" );
+Readonly::Array my @CLI_OPTS            => ( "query_ld|ld:f", "query_ahead|ahead:i", "query_back|back:i" );
 Readonly::Scalar my $DEFAULT_DAYS_BACK  => 30;      # query limit days in the past
 Readonly::Scalar my $DEFAULT_DAYS_AHEAD => 90;      # query limit days in the future
 Readonly::Scalar my $DEFAULT_LD         => 1.5;     # query limit of closest approach in lunar distances (LD)
