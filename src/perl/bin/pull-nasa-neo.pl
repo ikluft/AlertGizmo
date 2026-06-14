@@ -24,11 +24,23 @@ __END__
 
 =head1 USAGE
 
-    pull-nasa-neo.pl [--dir=directory] [--tz=timezone] [--proxy=proxy-string] [--verbose] [--test]
+    pull-nasa-neo.pl [--query_ld=num|--ld=num] [--query_ahead=int|--ahead=int] [--query_back=int|--back=int] [--dir=directory] [--tz=timezone] [--proxy=proxy-string] [--verbose] [--test]
 
 =head1 OPTIONS
 
 =over
+
+=item --query_ld / --ld
+
+Sets the query parameter for Near Earth Object (NEO) closest passes within a specified number of lunar distances, or multiples of the distance to the Moon. The default is 1.5. It was previously set to 2.0, but reduced to shorten the displayed list as astronomers improve methods of discovery, especially after opening of the Vera Rubin Observatory with a larger digital camera section.
+
+=item --query_ahead / --ahead
+
+Sets the query parameter for number of days to look ahead for closest approach of a Near Earth Object (NEO). The default is 90 days.
+
+=item --query_back / --back
+
+Sets the query parameter for number of days to look back for closest approach of a Near Earth Object (NEO). The default is 30 days. It was previously set to 15 days, but increased to 30 to cover a little more than a 28-day lunar cycle. The rate of discovery of NEOs is highest during the new moon and lowest at the full moon, which made the length of the list fluctuate widely.
 
 =item --dir=directory
 
